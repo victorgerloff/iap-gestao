@@ -182,7 +182,11 @@
         <div class="logo-sub">International Auto Parts &nbsp;<span id="sync-status" class="sync-badge"></span></div>
       </div>
     </div>
-    <button class="btn-primary" onclick="openModal()"><i class="ti ti-plus"></i> Nova Peça</button>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="user-email" style="font-size:12px;color:var(--text2);"></span>
+      <button class="btn-ghost" onclick="doLogout()" title="Sair"><i class="ti ti-logout"></i></button>
+      <button class="btn-primary" onclick="openModal()"><i class="ti ti-plus"></i> Nova Peça</button>
+    </div>
   </div>
 
   <div class="stats" id="stats">
@@ -275,6 +279,22 @@
   </div>
 </div>
 
+<!-- LOGIN -->
+<div class="modal-overlay open" id="login-overlay">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-title">Entrar</div>
+    <div class="form-grid" style="grid-template-columns:1fr;">
+      <div class="form-group"><label>E-mail</label><input type="email" id="login-email" placeholder="seu@email.com"></div>
+      <div class="form-group"><label>Senha</label><input type="password" id="login-password" placeholder="Minimo 6 caracteres"></div>
+    </div>
+    <div id="login-error" style="color:var(--red);font-size:12px;margin-top:4px;min-height:14px;"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="doSignup()">Criar conta</button>
+      <button class="btn-primary" onclick="doLogin()"><i class="ti ti-login"></i> Entrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
@@ -307,6 +327,40 @@
   </div>
 </div>
 
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDO_SHL71igs8O5ODCQnwxhMXVnQ86UBvc",
+    authDomain: "gestao-de-pecas-international.firebaseapp.com",
+    projectId: "gestao-de-pecas-international",
+    storageBucket: "gestao-de-pecas-international.firebasestorage.app",
+    messagingSenderId: "531733990676",
+    appId: "1:531733990676:web:9b5d3b25f7a233bd210601",
+    measurementId: "G-49R6FR0S9T"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const auth = getAuth(fbApp);
+  const dbFs = getFirestore(fbApp);
+
+  window.IAP_FB = {
+    signIn: (email, pw) => signInWithEmailAndPassword(auth, email, pw),
+    signUp: (email, pw) => createUserWithEmailAndPassword(auth, email, pw),
+    signOutUser: () => signOut(auth),
+    onAuth: (cb) => onAuthStateChanged(auth, cb),
+    savePeca: (p) => setDoc(doc(collection(dbFs, 'pecas'), p.id), p),
+    deletePeca: (id) => deleteDoc(doc(collection(dbFs, 'pecas'), id)),
+    updateCredito: (id, val) => updateDoc(doc(collection(dbFs, 'pecas'), id), { credito: val }),
+    listenPecas: (cb) => onSnapshot(collection(dbFs, 'pecas'), snap => {
+      const arr = snap.docs.map(d => Object.assign({}, d.data(), { id: d.id }));
+      cb(arr);
+    })
+  };
+  window.dispatchEvent(new Event('iapFbReady'));
+</script>
 <script>
 const LS_KEY = 'iap_pecas_v2';
 let DB = [];
@@ -316,20 +370,61 @@ let reportMonth = new Date().getMonth();
 let reportYear = new Date().getFullYear();
 
 // Storage
-function dbLoad() {
-  try { DB = JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { DB = []; }
-}
-function dbSave() {
-  localStorage.setItem(LS_KEY, JSON.stringify(DB));
-  showSync();
-}
+function dbLoad() {}
+function dbSave() {}
 let syncTimer;
 function showSync() {
   clearTimeout(syncTimer);
   const el = document.getElementById('sync-status');
-  el.innerHTML = '<i class="ti ti-cloud-check"></i> salvo';
-  syncTimer = setTimeout(() => el.innerHTML = '', 2500);
+  el.innerHTML = '<i class="ti ti-cloud-check"></i> sincronizado';
+  syncTimer = setTimeout(()=>{ el.innerHTML=''; }, 2500);
 }
+
+// Auth
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  window.IAP_FB.signIn(email, pw).catch(e => { errEl.textContent = traduzErroAuth(e.code); });
+}
+function doSignup() {
+  const email = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  window.IAP_FB.signUp(email, pw).catch(e => { errEl.textContent = traduzErroAuth(e.code); });
+}
+function doLogout() {
+  window.IAP_FB.signOutUser();
+}
+function traduzErroAuth(code) {
+  const map = {
+    'auth/invalid-email': 'E-mail invalido',
+    'auth/user-not-found': 'Usuario nao encontrado',
+    'auth/wrong-password': 'Senha incorreta',
+    'auth/email-already-in-use': 'E-mail ja cadastrado',
+    'auth/weak-password': 'Senha muito curta (minimo 6 caracteres)',
+    'auth/invalid-credential': 'E-mail ou senha invalidos',
+    'auth/missing-email': 'Informe o e-mail',
+    'auth/missing-password': 'Informe a senha'
+  };
+  return map[code] || ('Erro: ' + code);
+}
+function initAuthFlow() {
+  window.IAP_FB.onAuth(user => {
+    const overlay = document.getElementById('login-overlay');
+    if (user) {
+      overlay.classList.remove('open');
+      document.getElementById('user-email').textContent = user.email;
+      window.IAP_FB.listenPecas(data => { DB = data; renderAll(); showSync(); });
+    } else {
+      overlay.classList.add('open');
+      document.getElementById('user-email').textContent = '';
+    }
+  });
+}
+if (window.IAP_FB) { initAuthFlow(); } else { window.addEventListener('iapFbReady', initAuthFlow); }
 
 // Helpers
 function fmtVal(v) { return 'US$ ' + (v||0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:20}); }
@@ -532,7 +627,7 @@ function openModal(id) {
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
 function salvar() {
   const nome = document.getElementById('f-nome').value.trim();
-  if(!nome) { alert('Informe o nome da peça.'); return; }
+  if (!nome) { alert('Informe o nome da peça'); return; }
   const p = {
     id: editId || Date.now().toString(),
     nome, codigo: document.getElementById('f-codigo').value.trim(),
@@ -544,20 +639,17 @@ function salvar() {
     credito: document.getElementById('f-credito').value,
     obs: document.getElementById('f-obs').value.trim()
   };
-  if(editId) { const i = DB.findIndex(x=>x.id===editId); DB[i]=p; }
-  else DB.unshift(p);
-  dbSave(); closeModal(); renderAll();
+  window.IAP_FB.savePeca(p).then(()=>{ closeModal(); }).catch(e=>alert('Erro ao salvar: '+e.message));
 }
 function deletar(id) {
   if(!confirm('Remover esta peça?')) return;
-  DB = DB.filter(x=>x.id!==id); dbSave(); renderAll();
+  window.IAP_FB.deletePeca(id).catch(e=>alert('Erro ao remover: '+e.message));
 }
 function toggleCredito(id) {
-  const i = DB.findIndex(x=>x.id===id);
-  DB[i].credito = DB[i].credito === 'creditada' ? 'pendente' : 'creditada';
-  dbSave(); renderAll();
+  const p = DB.find(x=>x.id===id);
+  const novo = p.credito === 'creditada' ? 'pendente' : 'creditada';
+  window.IAP_FB.updateCredito(id, novo).catch(e=>alert('Erro: '+e.message));
 }
-
 function setTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -569,7 +661,7 @@ function setTab(tab) {
 
 document.getElementById('modal').addEventListener('click', e => { if(e.target === document.getElementById('modal')) closeModal(); });
 
-dbLoad(); renderAll();
+// Auth flow ja inicializado (initAuthFlow) cuida do carregamento inicial via listenPecas
 </script>
 </body>
 </html>

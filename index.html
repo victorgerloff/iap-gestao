@@ -285,7 +285,7 @@
       <div class="form-group"><label>Carro / Veículo</label><input type="text" id="f-carro" placeholder="Ex: Honda Civic 2019"></div>
       <div class="form-group"><label>Fornecedor</label><input type="text" id="f-fornecedor" placeholder="Ex: João Silva"></div>
       <div class="form-group"><label>Data</label><input type="date" id="f-data"></div>
-      <div class="form-group"><label>Valor (R$)</label><input type="number" id="f-valor" placeholder="0,00" step="0.01" min="0"></div>
+      <div class="form-group"><label>Valor (US$)</label><input type="number" id="f-valor" placeholder="0.00" step="any" min="0"></div>
       <div class="form-group"><label>Status</label>
         <select id="f-status">
           <option value="utilizada">Utilizada</option>
@@ -332,7 +332,7 @@ function showSync() {
 }
 
 // Helpers
-function fmtVal(v) { return 'R$ ' + (v||0).toFixed(2).replace('.', ','); }
+function fmtVal(v) { return 'US$ ' + (v||0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:20}); }
 function fmtDate(d) { if(!d) return '—'; const [y,m,di] = d.split('-'); return di+'/'+m+'/'+y; }
 function inPeriod(date, fromId, toId) {
   const f = document.getElementById(fromId)?.value;

@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Gestão de Peças — International Auto Parts</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <style>
@@ -354,10 +357,10 @@
     savePeca: (p) => setDoc(doc(collection(dbFs, 'pecas'), p.id), p),
     deletePeca: (id) => deleteDoc(doc(collection(dbFs, 'pecas'), id)),
     updateCredito: (id, val) => updateDoc(doc(collection(dbFs, 'pecas'), id), { credito: val }),
-    listenPecas: (cb) => onSnapshot(collection(dbFs, 'pecas'), snap => {
+    listenPecas: (cb, onError) => onSnapshot(collection(dbFs, 'pecas'), snap => {
       const arr = snap.docs.map(d => Object.assign({}, d.data(), { id: d.id }));
       cb(arr);
-    })
+    }, onError)
   };
   window.dispatchEvent(new Event('iapFbReady'));
 </script>
@@ -376,8 +379,16 @@ let syncTimer;
 function showSync() {
   clearTimeout(syncTimer);
   const el = document.getElementById('sync-status');
+  el.style.color = 'var(--green)';
   el.innerHTML = '<i class="ti ti-cloud-check"></i> sincronizado';
   syncTimer = setTimeout(()=>{ el.innerHTML=''; }, 2500);
+}
+function showSyncError(err) {
+  clearTimeout(syncTimer);
+  console.error('Erro ao sincronizar com o Firestore:', err);
+  const el = document.getElementById('sync-status');
+  el.style.color = 'var(--red)';
+  el.innerHTML = '<i class="ti ti-cloud-off"></i> erro de sincronização';
 }
 
 // Auth
@@ -417,7 +428,7 @@ function initAuthFlow() {
     if (user) {
       overlay.classList.remove('open');
       document.getElementById('user-email').textContent = user.email;
-      window.IAP_FB.listenPecas(data => { DB = data; renderAll(); showSync(); });
+      window.IAP_FB.listenPecas(data => { DB = data; renderAll(); showSync(); }, showSyncError);
     } else {
       overlay.classList.add('open');
       document.getElementById('user-email').textContent = '';

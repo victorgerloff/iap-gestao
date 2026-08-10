@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -115,6 +115,11 @@
   .btn-ghost:hover { background: var(--surface2); color: var(--text); }
   .btn-danger { background: transparent; color: var(--red); border: 0.5px solid var(--red); padding: 5px 10px; border-radius: 7px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s; }
   .btn-danger:hover { background: var(--red-bg); }
+  .btn-credit { border: none; color: #fff; font-weight: 600; padding: 6px 12px; border-radius: 7px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s; }
+  .btn-credit.is-credited { background: var(--green); }
+  .btn-credit.is-credited:hover { background: var(--green-text); }
+  .btn-credit.is-pending { background: var(--red); }
+  .btn-credit.is-pending:hover { background: var(--red-text); }
 
   /* Filters */
   .filters { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
@@ -160,6 +165,8 @@
   @media(max-width:480px){ .form-grid { grid-template-columns: 1fr; } }
   .form-group { display: flex; flex-direction: column; gap: 5px; }
   .form-group.full { grid-column: 1 / -1; }
+  .form-quad { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media(max-width:480px){ .form-quad { grid-template-columns: 1fr 1fr; } }
   label { font-size: 12px; color: var(--text2); font-weight: 600; }
   .form-group input, .form-group select { width: 100%; }
   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1rem; padding-top: 1rem; border-top: 0.5px solid var(--border); }
@@ -218,9 +225,9 @@
 
   <div class="stats" id="stats">
     <div class="stat"><div class="stat-label">Total</div><div class="stat-val" id="s-total">—</div></div>
-    <div class="stat"><div class="stat-label">Devolvidas</div><div class="stat-val amber" id="s-dev">—</div></div>
-    <div class="stat"><div class="stat-label">Pendentes</div><div class="stat-val red" id="s-pend">—</div></div>
-    <div class="stat"><div class="stat-label">A receber</div><div class="stat-val green" id="s-val">—</div></div>
+    <div class="stat"><div class="stat-label">Returned</div><div class="stat-val amber" id="s-dev">—</div></div>
+    <div class="stat"><div class="stat-label">Pending</div><div class="stat-val red" id="s-pend">—</div></div>
+    <div class="stat"><div class="stat-label">Receivable</div><div class="stat-val green" id="s-val">—</div></div>
   </div>
 
   <div class="tabs">
@@ -234,22 +241,22 @@
   <!-- TODAS -->
   <div class="section active" id="sec-todas">
     <div class="filters">
-      <input type="text" class="search-input" placeholder="Buscar peça, código, carro ou fornecedor..." oninput="renderAll()" id="search">
+      <input type="text" class="search-input" placeholder="Search part, code, vehicle or supplier..." oninput="renderAll()" id="search">
       <select class="filter-select" onchange="renderAll()" id="filter-status">
-        <option value="">Todos os status</option>
-        <option value="utilizada">Utilizadas</option>
-        <option value="devolvida">Devolvidas</option>
+        <option value="">All statuses</option>
+        <option value="utilizada">Used</option>
+        <option value="devolvida">Returned</option>
       </select>
       <select class="filter-select" onchange="renderAll()" id="filter-credito">
-        <option value="">Crédito: todos</option>
-        <option value="creditada">Creditada</option>
-        <option value="pendente">Pendente</option>
+        <option value="">Credit: all</option>
+        <option value="creditada">Credited</option>
+        <option value="pendente">Pending</option>
       </select>
     </div>
     <div class="filters">
-      <span class="filter-row-label"><i class="ti ti-calendar" style="font-size:14px"></i> Período:</span>
+      <span class="filter-row-label"><i class="ti ti-calendar" style="font-size:14px"></i> Period:</span>
       <input type="date" class="date-input" id="date-from" onchange="renderAll()">
-      <span class="filter-row-label">até</span>
+      <span class="filter-row-label">to</span>
       <input type="date" class="date-input" id="date-to" onchange="renderAll()">
       <button class="btn-ghost" onclick="clearDates('')">Clear</button>
     </div>
@@ -259,9 +266,9 @@
   <!-- UTILIZADAS -->
   <div class="section" id="sec-utilizadas">
     <div class="filters">
-      <span class="filter-row-label"><i class="ti ti-calendar" style="font-size:14px"></i> Período:</span>
+      <span class="filter-row-label"><i class="ti ti-calendar" style="font-size:14px"></i> Period:</span>
       <input type="date" class="date-input" id="udate-from" onchange="renderAll()">
-      <span class="filter-row-label">até</span>
+      <span class="filter-row-label">to</span>
       <input type="date" class="date-input" id="udate-to" onchange="renderAll()">
       <button class="btn-ghost" onclick="clearDates('u')">Clear</button>
     </div>
@@ -271,9 +278,9 @@
   <!-- DEVOLVIDAS -->
   <div class="section" id="sec-devolvidas">
     <div class="filters">
-      <span class="filter-row-label"><i class="ti ti-calendar" style="font-size:14px"></i> Período:</span>
+      <span class="filter-row-label"><i class="ti ti-calendar" style="font-size:14px"></i> Period:</span>
       <input type="date" class="date-input" id="ddate-from" onchange="renderAll()">
-      <span class="filter-row-label">até</span>
+      <span class="filter-row-label">to</span>
       <input type="date" class="date-input" id="ddate-to" onchange="renderAll()">
       <button class="btn-ghost" onclick="clearDates('d')">Clear</button>
     </div>
@@ -283,9 +290,9 @@
   <!-- CRÉDITOS -->
   <div class="section" id="sec-creditos">
     <div class="filters">
-      <span class="filter-row-label"><i class="ti ti-calendar" style="font-size:14px"></i> Período:</span>
+      <span class="filter-row-label"><i class="ti ti-calendar" style="font-size:14px"></i> Period:</span>
       <input type="date" class="date-input" id="cdate-from" onchange="renderAll()">
-      <span class="filter-row-label">até</span>
+      <span class="filter-row-label">to</span>
       <input type="date" class="date-input" id="cdate-to" onchange="renderAll()">
       <button class="btn-ghost" onclick="clearDates('c')">Clear</button>
     </div>
@@ -309,13 +316,13 @@
 <!-- LOGIN -->
 <div class="modal-overlay open" id="login-overlay">
   <div class="modal" style="max-width:360px;">
-    <div class="modal-title">Entrar</div>
+    <div class="modal-title">Sign In</div>
     <div class="form-grid" style="grid-template-columns:1fr;">
-      <div class="form-group"><label>E-mail</label><input type="email" id="login-email" placeholder="seu@email.com"></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="login-password" placeholder="Minimo 6 caracteres"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="you@email.com"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="login-password" placeholder="Minimum 6 characters"></div>
     </div>
     <div id="login-error" style="color:var(--red);font-size:12px;margin-top:4px;min-height:14px;"></div>
-    <div style="font-size:11px;color:var(--text3);margin-top:6px;">Novas contas são criadas apenas pelo administrador.</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px;">New accounts are created by the administrator only.</div>
     <div class="modal-actions">
       <button class="btn-primary" onclick="doLogin()"><i class="ti ti-login"></i> Sign In</button>
     </div>
@@ -325,27 +332,29 @@
 <!-- MODAL -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
-    <div class="modal-title" id="modal-title">Nova Peça</div>
+    <div class="modal-title" id="modal-title">New Part</div>
     <div class="form-grid">
-      <div class="form-group"><label>Nome da Peça *</label><input type="text" id="f-nome" placeholder="Ex: Filtro de óleo"></div>
-      <div class="form-group"><label>Código da Peça</label><input type="text" id="f-codigo" placeholder="Ex: 15400-PLM-A02"></div>
-      <div class="form-group"><label>Carro / Veículo</label><input type="text" id="f-carro" placeholder="Ex: Honda Civic 2019"></div>
-      <div class="form-group"><label>Fornecedor</label><input type="text" id="f-fornecedor" placeholder="Ex: João Silva"></div>
-      <div class="form-group"><label>Data</label><input type="date" id="f-data"></div>
-      <div class="form-group"><label>Valor (US$)</label><input type="number" id="f-valor" placeholder="0.00" step="any" min="0"></div>
+      <div class="form-group"><label>Part Name *</label><input type="text" id="f-nome" placeholder="E.g.: Oil filter"></div>
+      <div class="form-group"><label>Part Code</label><input type="text" id="f-codigo" placeholder="E.g.: 15400-PLM-A02"></div>
+      <div class="form-quad">
+        <div class="form-group"><label>Vehicle</label><input type="text" id="f-carro" placeholder="E.g.: Honda Civic 2019"></div>
+        <div class="form-group"><label>Supplier</label><input type="text" id="f-fornecedor" placeholder="E.g.: John Smith"></div>
+        <div class="form-group"><label>Date</label><input type="date" id="f-data"></div>
+        <div class="form-group"><label>Value (US$)</label><input type="number" id="f-valor" placeholder="0.00" step="any" min="0"></div>
+      </div>
       <div class="form-group"><label>Status</label>
         <select id="f-status">
-          <option value="utilizada">Utilizada</option>
-          <option value="devolvida">Devolvida</option>
+          <option value="utilizada">Used</option>
+          <option value="devolvida">Returned</option>
         </select>
       </div>
-      <div class="form-group"><label>Crédito</label>
+      <div class="form-group"><label>Credit</label>
         <select id="f-credito">
-          <option value="pendente">Pendente</option>
-          <option value="creditada">Creditada</option>
+          <option value="pendente">Pending</option>
+          <option value="creditada">Credited</option>
         </select>
       </div>
-      <div class="form-group full"><label>Observações</label><input type="text" id="f-obs" placeholder="Notas adicionais..."></div>
+      <div class="form-group full"><label>Notes</label><input type="text" id="f-obs" placeholder="Additional notes..."></div>
     </div>
     <div class="modal-actions">
       <button class="btn-ghost" onclick="closeModal()">Cancel</button>
@@ -403,20 +412,20 @@ function showSync() {
   clearTimeout(syncTimer);
   const el = document.getElementById('sync-status');
   el.style.color = 'var(--green)';
-  el.innerHTML = '<i class="ti ti-cloud-check"></i> sincronizado';
+  el.innerHTML = '<i class="ti ti-cloud-check"></i> synced';
   syncTimer = setTimeout(()=>{ el.innerHTML=''; }, 2500);
 }
 function showSyncError(err) {
   clearTimeout(syncTimer);
-  console.error('Erro ao sincronizar com o Firestore:', err);
+  console.error('Firestore sync error:', err);
   if (err && err.code === 'permission-denied') {
     window.IAP_FB.signOutUser();
-    document.getElementById('login-error').textContent = 'Conta não autorizada. Fale com o administrador.';
+    document.getElementById('login-error').textContent = 'Account not authorized. Contact the administrator.';
     return;
   }
   const el = document.getElementById('sync-status');
   el.style.color = 'var(--red)';
-  el.innerHTML = '<i class="ti ti-cloud-off"></i> erro de sincronização';
+  el.innerHTML = '<i class="ti ti-cloud-off"></i> sync error';
 }
 
 // Auth
@@ -425,21 +434,21 @@ function doLogin() {
   const pw = document.getElementById('login-password').value;
   const errEl = document.getElementById('login-error');
   errEl.textContent = '';
-  window.IAP_FB.signIn(email, pw).catch(e => { errEl.textContent = traduzErroAuth(e.code); });
+  window.IAP_FB.signIn(email, pw).catch(e => { errEl.textContent = authErrorMessage(e.code); });
 }
 function doLogout() {
   window.IAP_FB.signOutUser();
 }
-function traduzErroAuth(code) {
+function authErrorMessage(code) {
   const map = {
-    'auth/invalid-email': 'E-mail invalido',
-    'auth/user-not-found': 'Usuario nao encontrado',
-    'auth/wrong-password': 'Senha incorreta',
-    'auth/invalid-credential': 'E-mail ou senha invalidos',
-    'auth/missing-email': 'Informe o e-mail',
-    'auth/missing-password': 'Informe a senha'
+    'auth/invalid-email': 'Invalid email',
+    'auth/user-not-found': 'User not found',
+    'auth/wrong-password': 'Incorrect password',
+    'auth/invalid-credential': 'Invalid email or password',
+    'auth/missing-email': 'Enter your email',
+    'auth/missing-password': 'Enter your password'
   };
-  return map[code] || ('Erro: ' + code);
+  return map[code] || ('Error: ' + code);
 }
 function initAuthFlow() {
   window.IAP_FB.onAuth(user => {
@@ -475,15 +484,15 @@ function clearDates(prefix) {
 // Card HTML
 function cardHTML(p) {
   const sb = p.status === 'devolvida'
-    ? '<span class="badge returned"><i class="ti ti-arrow-back-up"></i> Devolvida</span>'
-    : '<span class="badge used"><i class="ti ti-check"></i> Utilizada</span>';
+    ? '<span class="badge returned"><i class="ti ti-arrow-back-up"></i> Returned</span>'
+    : '<span class="badge used"><i class="ti ti-check"></i> Used</span>';
   const cb = p.status === 'devolvida'
     ? (p.credito === 'creditada'
-      ? '<span class="badge credited"><i class="ti ti-circle-check"></i> Creditada</span>'
-      : '<span class="badge pending"><i class="ti ti-clock"></i> Pendente</span>')
+      ? '<span class="badge credited"><i class="ti ti-circle-check"></i> Credited</span>'
+      : '<span class="badge pending"><i class="ti ti-clock"></i> Pending</span>')
     : '';
   const creditBtn = p.status === 'devolvida'
-    ? `<button class="btn-ghost" onclick="toggleCredito('${p.id}')"><i class="ti ti-${p.credito==='creditada'?'circle-minus':'circle-check'}"></i> ${p.credito==='creditada'?'Mark pending':'Mark credited'}</button>`
+    ? `<button class="btn-credit ${p.credito==='creditada'?'is-credited':'is-pending'}" onclick="toggleCredito('${p.id}')"><i class="ti ti-${p.credito==='creditada'?'circle-minus':'circle-check'}"></i> ${p.credito==='creditada'?'Mark pending':'Mark credited'}</button>`
     : '';
   return `<div class="card">
     <div class="card-header">
@@ -494,9 +503,9 @@ function cardHTML(p) {
       <div class="badges">${sb}${cb}</div>
     </div>
     <div class="piece-meta">
-      <div class="meta-item"><i class="ti ti-car" style="font-size:11px"></i> Veículo<span>${p.carro||'—'}</span></div>
-      <div class="meta-item"><i class="ti ti-user" style="font-size:11px"></i> Fornecedor<span>${p.fornecedor||'—'}</span></div>
-      <div class="meta-item"><i class="ti ti-calendar" style="font-size:11px"></i> Data<span>${fmtDate(p.data)}</span></div>
+      <div class="meta-item"><i class="ti ti-car" style="font-size:11px"></i> Vehicle<span>${p.carro||'—'}</span></div>
+      <div class="meta-item"><i class="ti ti-user" style="font-size:11px"></i> Supplier<span>${p.fornecedor||'—'}</span></div>
+      <div class="meta-item"><i class="ti ti-calendar" style="font-size:11px"></i> Date<span>${fmtDate(p.data)}</span></div>
     </div>
     <div class="piece-footer">
       <div class="piece-value">${fmtVal(p.valor)}</div>
@@ -511,7 +520,7 @@ function cardHTML(p) {
 }
 
 function emptyHTML() {
-  return '<div class="empty"><i class="ti ti-package-off"></i>Nenhuma peça encontrada</div>';
+  return '<div class="empty"><i class="ti ti-package-off"></i>No parts found</div>';
 }
 
 // Renders
@@ -551,23 +560,23 @@ function renderCreditos() {
   const el = document.getElementById('creditos-view');
   if(!all.length) { el.innerHTML = emptyHTML(); return; }
   let html = `<div class="credit-block">
-    <div style="font-size:14px;font-weight:700;margin-bottom:12px"><i class="ti ti-report-money"></i> Resumo — IAP</div>
-    <div class="credit-row"><span>Total devolvido</span><span style="font-weight:600">${fmtVal(all.reduce((s,p)=>s+p.valor,0))}</span></div>
-    <div class="credit-row"><span>Já creditado</span><span class="val-green">${fmtVal(totalCred)}</span></div>
-    <div class="credit-row"><span>Aguardando crédito</span><span class="val-red">${fmtVal(totalPend)}</span></div>
-    <div class="total-credit-row"><span>Saldo a receber</span><span class="val-red">${fmtVal(totalPend)}</span></div>
+    <div style="font-size:14px;font-weight:700;margin-bottom:12px"><i class="ti ti-report-money"></i> Summary — IAP</div>
+    <div class="credit-row"><span>Total returned</span><span style="font-weight:600">${fmtVal(all.reduce((s,p)=>s+p.valor,0))}</span></div>
+    <div class="credit-row"><span>Already credited</span><span class="val-green">${fmtVal(totalCred)}</span></div>
+    <div class="credit-row"><span>Awaiting credit</span><span class="val-red">${fmtVal(totalPend)}</span></div>
+    <div class="total-credit-row"><span>Balance due</span><span class="val-red">${fmtVal(totalPend)}</span></div>
   </div>`;
   if(pending.length) {
-    html += `<div class="report-section-title">Pendentes (${pending.length})</div>${pending.map(cardHTML).join('')}`;
+    html += `<div class="report-section-title">Pending (${pending.length})</div>${pending.map(cardHTML).join('')}`;
   }
   if(credited.length) {
-    html += `<div class="report-section-title" style="margin-top:1rem">Creditadas (${credited.length})</div>${credited.map(cardHTML).join('')}`;
+    html += `<div class="report-section-title" style="margin-top:1rem">Credited (${credited.length})</div>${credited.map(cardHTML).join('')}`;
   }
   el.innerHTML = html;
 }
 
 function renderReport() {
-  const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('month-label').textContent = `${months[reportMonth]} ${reportYear}`;
   const yStr = String(reportYear);
   const mStr = String(reportMonth+1).padStart(2,'0');
@@ -583,7 +592,7 @@ function renderReport() {
   const totalCred = credited.reduce((s,p)=>s+p.valor,0);
 
   if(!month.length) {
-    document.getElementById('report-content').innerHTML = '<div class="empty"><i class="ti ti-calendar-off"></i>Nenhuma peça registrada neste mês</div>';
+    document.getElementById('report-content').innerHTML = '<div class="empty"><i class="ti ti-calendar-off"></i>No parts recorded this month</div>';
     return;
   }
 
@@ -593,23 +602,23 @@ function renderReport() {
     <td>${p.fornecedor||'—'}</td>
     <td>${fmtDate(p.data)}</td>
     <td style="text-align:right;font-weight:600">${fmtVal(p.valor)}</td>
-    <td>${p.status==='devolvida'?`<span class="badge returned">Dev.</span>`:`<span class="badge used">Usada</span>`}</td>
-    <td>${p.status==='devolvida'?(p.credito==='creditada'?`<span class="badge credited">Sim</span>`:`<span class="badge pending">Não</span>`):'—'}</td>
+    <td>${p.status==='devolvida'?`<span class="badge returned">Ret.</span>`:`<span class="badge used">Used</span>`}</td>
+    <td>${p.status==='devolvida'?(p.credito==='creditada'?`<span class="badge credited">Yes</span>`:`<span class="badge pending">No</span>`):'—'}</td>
   </tr>`).join('');
 
   document.getElementById('report-content').innerHTML = `
     <div class="report-summary">
-      <div class="report-card"><div class="report-card-label">Peças no mês</div><div class="report-card-val">${month.length}</div></div>
-      <div class="report-card"><div class="report-card-label">Utilizadas</div><div class="report-card-val" style="color:var(--blue-text)">${used.length} — ${fmtVal(totalUsed)}</div></div>
-      <div class="report-card"><div class="report-card-label">Devolvidas</div><div class="report-card-val" style="color:var(--amber)">${returned.length} — ${fmtVal(totalRet)}</div></div>
-      <div class="report-card"><div class="report-card-label">Crédito recebido</div><div class="report-card-val" style="color:var(--green)">${fmtVal(totalCred)}</div></div>
-      <div class="report-card"><div class="report-card-label">Crédito pendente</div><div class="report-card-val" style="color:var(--red)">${fmtVal(totalPend)}</div></div>
+      <div class="report-card"><div class="report-card-label">Parts this month</div><div class="report-card-val">${month.length}</div></div>
+      <div class="report-card"><div class="report-card-label">Used</div><div class="report-card-val" style="color:var(--blue-text)">${used.length} — ${fmtVal(totalUsed)}</div></div>
+      <div class="report-card"><div class="report-card-label">Returned</div><div class="report-card-val" style="color:var(--amber)">${returned.length} — ${fmtVal(totalRet)}</div></div>
+      <div class="report-card"><div class="report-card-label">Credit received</div><div class="report-card-val" style="color:var(--green)">${fmtVal(totalCred)}</div></div>
+      <div class="report-card"><div class="report-card-label">Credit pending</div><div class="report-card-val" style="color:var(--red)">${fmtVal(totalPend)}</div></div>
     </div>
-    <div class="report-section-title">Todas as peças do mês</div>
+    <div class="report-section-title">All parts this month</div>
     <div style="overflow-x:auto">
     <table class="summary-table">
       <thead><tr>
-        <th>Peça</th><th>Veículo</th><th>Fornecedor</th><th>Data</th><th style="text-align:right">Valor</th><th>Status</th><th>Crédito</th>
+        <th>Part</th><th>Vehicle</th><th>Supplier</th><th>Date</th><th style="text-align:right">Value</th><th>Status</th><th>Credit</th>
       </tr></thead>
       <tbody>${tableRows}</tbody>
     </table>
@@ -635,7 +644,7 @@ function renderAll() {
 // Modal
 function openModal(id) {
   editId = id || null;
-  document.getElementById('modal-title').textContent = id ? 'Editar Peça' : 'Nova Peça';
+  document.getElementById('modal-title').textContent = id ? 'Edit Part' : 'New Part';
   if(id) {
     const p = DB.find(x => x.id === id);
     if(p) {
@@ -657,7 +666,7 @@ function openModal(id) {
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
 function salvar() {
   const nome = document.getElementById('f-nome').value.trim();
-  if (!nome) { alert('Informe o nome da peça'); return; }
+  if (!nome) { alert('Enter the part name'); return; }
   const p = {
     id: editId || Date.now().toString(),
     nome, codigo: document.getElementById('f-codigo').value.trim(),
@@ -669,20 +678,20 @@ function salvar() {
     credito: document.getElementById('f-credito').value,
     obs: document.getElementById('f-obs').value.trim()
   };
-  window.IAP_FB.savePeca(p).then(()=>{ closeModal(); }).catch(e=>alert('Erro ao salvar: '+e.message));
+  window.IAP_FB.savePeca(p).then(()=>{ closeModal(); }).catch(e=>alert('Error saving: '+e.message));
 }
 function deletar(id) {
-  if(!confirm('Remover esta peça?')) return;
-  window.IAP_FB.deletePeca(id).catch(e=>alert('Erro ao remover: '+e.message));
+  if(!confirm('Remove this part?')) return;
+  window.IAP_FB.deletePeca(id).catch(e=>alert('Error removing: '+e.message));
 }
 function toggleCredito(id) {
   const p = DB.find(x=>x.id===id);
   const novo = p.credito === 'creditada' ? 'pendente' : 'creditada';
   const msg = novo === 'creditada'
-    ? `Confirma que a peça "${p.nome}" foi creditada?`
-    : `Confirma que a peça "${p.nome}" está com crédito pendente?`;
+    ? `Confirm that part "${p.nome}" was credited?`
+    : `Confirm that part "${p.nome}" is credit pending?`;
   if (!confirm(msg)) return;
-  window.IAP_FB.updateCredito(id, novo).catch(e=>alert('Erro: '+e.message));
+  window.IAP_FB.updateCredito(id, novo).catch(e=>alert('Error: '+e.message));
 }
 function setTab(tab) {
   currentTab = tab;

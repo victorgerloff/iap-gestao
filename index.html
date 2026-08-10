@@ -148,8 +148,8 @@
   .icon-btn.danger { color: var(--red); border-color: var(--red); }
   .icon-btn.danger:hover { background: var(--red-bg); }
 
-  .piece-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--border); }
-  @media(max-width:480px){ .piece-meta { grid-template-columns: 1fr 1fr; } }
+  .piece-meta { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--border); }
+  @media(max-width:600px){ .piece-meta { grid-template-columns: 1fr 1fr; } }
   .meta-item { font-size: 11px; color: var(--text3); }
   .meta-item span { display: block; font-size: 13px; color: var(--text); margin-top: 2px; font-weight: 500; }
   .piece-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--border); flex-wrap: wrap; gap: 16px; }
@@ -171,8 +171,8 @@
   @media(max-width:480px){ .form-grid { grid-template-columns: 1fr; } }
   .form-group { display: flex; flex-direction: column; gap: 5px; }
   .form-group.full { grid-column: 1 / -1; }
-  .form-quad { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  @media(max-width:480px){ .form-quad { grid-template-columns: 1fr 1fr; } }
+  .form-quad { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  @media(max-width:600px){ .form-quad { grid-template-columns: 1fr 1fr; } }
   label { font-size: 12px; color: var(--text2); font-weight: 600; }
   .form-group input, .form-group select { width: 100%; }
   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1rem; padding-top: 1rem; border-top: 0.5px solid var(--border); }
@@ -194,7 +194,8 @@
   .print-btn { margin-left: auto; }
   @media print {
     .tabs, .header .btn-primary, .card-actions-right, .modal-overlay, .print-btn, .month-nav button { display: none !important; }
-    .section { display: block !important; }
+    .section { display: none !important; }
+    .section.active { display: block !important; }
     .app { padding: 0; }
     body { background: #fff; color: #000; }
   }
@@ -238,7 +239,7 @@
 
   <div class="tabs">
     <button class="tab active" onclick="setTab('todas')">All</button>
-    <button class="tab" onclick="setTab('utilizadas')">Used</button>
+    <button class="tab" onclick="setTab('utilizadas')">Not Returned</button>
     <button class="tab" onclick="setTab('devolvidas')">Returned</button>
     <button class="tab" onclick="setTab('creditos')">Credits</button>
     <button class="tab" onclick="setTab('relatorio')">Monthly Report</button>
@@ -250,7 +251,7 @@
       <input type="text" class="search-input" placeholder="Search part, code, vehicle or supplier..." oninput="renderAll()" id="search">
       <select class="filter-select" onchange="renderAll()" id="filter-status">
         <option value="">All statuses</option>
-        <option value="utilizada">Used</option>
+        <option value="utilizada">Not Returned</option>
         <option value="devolvida">Returned</option>
       </select>
       <select class="filter-select" onchange="renderAll()" id="filter-credito">
@@ -258,6 +259,7 @@
         <option value="creditada">Credited</option>
         <option value="pendente">Pending</option>
       </select>
+      <button class="btn-ghost" onclick="toggleSort()"><i class="ti ti-arrows-sort"></i> <span id="sort-label">Newest first</span></button>
     </div>
     <div class="filters">
       <span class="filter-row-label"><i class="ti ti-calendar" style="font-size:14px"></i> Period:</span>
@@ -346,11 +348,12 @@
         <div class="form-group"><label>Vehicle</label><input type="text" id="f-carro" placeholder="E.g.: Honda Civic 2019"></div>
         <div class="form-group"><label>Supplier</label><input type="text" id="f-fornecedor" placeholder="E.g.: John Smith"></div>
         <div class="form-group"><label>Date</label><input type="date" id="f-data"></div>
-        <div class="form-group"><label>Value (US$)</label><input type="number" id="f-valor" placeholder="0.00" step="any" min="0"></div>
+        <div class="form-group"><label>Value (US$)</label><input type="number" id="f-valor" placeholder="0.00" step="0.01" min="0"></div>
+        <div class="form-group"><label>Quantity</label><input type="number" id="f-qty" placeholder="1" step="1" min="1"></div>
       </div>
       <div class="form-group"><label>Status</label>
         <select id="f-status">
-          <option value="utilizada">Used</option>
+          <option value="utilizada">Not Returned</option>
           <option value="devolvida">Returned</option>
         </select>
       </div>
@@ -472,8 +475,18 @@ function initAuthFlow() {
 if (window.IAP_FB) { initAuthFlow(); } else { window.addEventListener('iapFbReady', initAuthFlow); }
 
 // Helpers
-function fmtVal(v) { return 'US$ ' + (v||0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:20}); }
+function fmtVal(v) { return 'US$ ' + (v||0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 function fmtDate(d) { if(!d) return '—'; const [y,m,di] = d.split('-'); return m+'/'+di+'/'+y.slice(-2); }
+let sortDir = 'desc';
+function sortByDate(arr) {
+  return [...arr].sort((a,b) => sortDir === 'asc' ? (a.data||'').localeCompare(b.data||'') : (b.data||'').localeCompare(a.data||''));
+}
+function toggleSort() {
+  sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  const el = document.getElementById('sort-label');
+  if (el) el.textContent = sortDir === 'asc' ? 'Oldest first' : 'Newest first';
+  renderAll();
+}
 function inPeriod(date, fromId, toId) {
   const f = document.getElementById(fromId)?.value;
   const t = document.getElementById(toId)?.value;
@@ -491,7 +504,7 @@ function clearDates(prefix) {
 function cardHTML(p) {
   const sb = p.status === 'devolvida'
     ? '<span class="badge returned"><i class="ti ti-arrow-back-up"></i> Returned</span>'
-    : '<span class="badge used"><i class="ti ti-check"></i> Used</span>';
+    : '<span class="badge used"><i class="ti ti-check"></i> Not Returned</span>';
   const creditToggle = p.status === 'devolvida'
     ? `<div class="credit-toggle">
         <button class="credit-opt ${p.credito==='creditada'?'active-green':''}" onclick="setCredito('${p.id}','creditada')">Credited</button>
@@ -511,6 +524,7 @@ function cardHTML(p) {
       <div class="meta-item"><i class="ti ti-user" style="font-size:11px"></i> Supplier<span>${p.fornecedor||'—'}</span></div>
       <div class="meta-item"><i class="ti ti-calendar" style="font-size:11px"></i> Date<span>${fmtDate(p.data)}</span></div>
       <div class="meta-item"><i class="ti ti-currency-dollar" style="font-size:11px"></i> Amount<span>${fmtVal(p.valor)}</span></div>
+      <div class="meta-item"><i class="ti ti-stack" style="font-size:11px"></i> Qty<span>${p.qtd||1}</span></div>
     </div>
     <div class="piece-footer">
       ${p.obs ? `<div class="piece-obs"><i class="ti ti-note"></i><span>${p.obs}</span></div>` : ''}
@@ -547,11 +561,12 @@ function renderTodas() {
     if(fC && p.credito !== fC) return false;
     return inPeriod(p.data, 'date-from', 'date-to');
   });
-  document.getElementById('list-todas').innerHTML = filtered.length ? filtered.map(cardHTML).join('') : emptyHTML();
+  const sorted = sortByDate(filtered);
+  document.getElementById('list-todas').innerHTML = sorted.length ? sorted.map(cardHTML).join('') : emptyHTML();
 }
 
 function renderSec(listId, filter, fromId, toId) {
-  const arr = DB.filter(p => filter(p) && inPeriod(p.data, fromId, toId));
+  const arr = sortByDate(DB.filter(p => filter(p) && inPeriod(p.data, fromId, toId)));
   document.getElementById(listId).innerHTML = arr.length ? arr.map(cardHTML).join('') : emptyHTML();
 }
 
@@ -571,10 +586,10 @@ function renderCreditos() {
     <div class="total-credit-row"><span>Balance due</span><span class="val-red">${fmtVal(totalPend)}</span></div>
   </div>`;
   if(pending.length) {
-    html += `<div class="report-section-title">Pending (${pending.length})</div>${pending.map(cardHTML).join('')}`;
+    html += `<div class="report-section-title">Pending (${pending.length})</div>${sortByDate(pending).map(cardHTML).join('')}`;
   }
   if(credited.length) {
-    html += `<div class="report-section-title" style="margin-top:1rem">Credited (${credited.length})</div>${credited.map(cardHTML).join('')}`;
+    html += `<div class="report-section-title" style="margin-top:1rem">Credited (${credited.length})</div>${sortByDate(credited).map(cardHTML).join('')}`;
   }
   el.innerHTML = html;
 }
@@ -600,20 +615,21 @@ function renderReport() {
     return;
   }
 
-  let tableRows = month.map(p => `<tr>
+  const totalMonth = month.reduce((s,p)=>s+p.valor,0);
+  let tableRows = sortByDate(month).map(p => `<tr>
     <td>${p.nome}${p.codigo?`<br><span style="font-size:11px;color:var(--text3)">${p.codigo}</span>`:''}</td>
     <td>${p.carro||'—'}</td>
     <td>${p.fornecedor||'—'}</td>
     <td>${fmtDate(p.data)}</td>
     <td style="text-align:right;font-weight:600">${fmtVal(p.valor)}</td>
-    <td>${p.status==='devolvida'?`<span class="badge returned">Ret.</span>`:`<span class="badge used">Used</span>`}</td>
+    <td>${p.status==='devolvida'?`<span class="badge returned">Ret.</span>`:`<span class="badge used">Not Returned</span>`}</td>
     <td>${p.status==='devolvida'?(p.credito==='creditada'?`<span class="badge credited">Yes</span>`:`<span class="badge pending">No</span>`):'—'}</td>
   </tr>`).join('');
 
   document.getElementById('report-content').innerHTML = `
     <div class="report-summary">
       <div class="report-card"><div class="report-card-label">Parts this month</div><div class="report-card-val">${month.length}</div></div>
-      <div class="report-card"><div class="report-card-label">Used</div><div class="report-card-val" style="color:var(--blue-text)">${used.length} — ${fmtVal(totalUsed)}</div></div>
+      <div class="report-card"><div class="report-card-label">Not Returned</div><div class="report-card-val" style="color:var(--blue-text)">${used.length} — ${fmtVal(totalUsed)}</div></div>
       <div class="report-card"><div class="report-card-label">Returned</div><div class="report-card-val" style="color:var(--amber)">${returned.length} — ${fmtVal(totalRet)}</div></div>
       <div class="report-card"><div class="report-card-label">Credit received</div><div class="report-card-val" style="color:var(--green)">${fmtVal(totalCred)}</div></div>
       <div class="report-card"><div class="report-card-label">Credit pending</div><div class="report-card-val" style="color:var(--red)">${fmtVal(totalPend)}</div></div>
@@ -625,6 +641,11 @@ function renderReport() {
         <th>Part</th><th>Vehicle</th><th>Supplier</th><th>Date</th><th style="text-align:right">Value</th><th>Status</th><th>Credit</th>
       </tr></thead>
       <tbody>${tableRows}</tbody>
+      <tfoot><tr style="font-weight:700">
+        <td colspan="4" style="text-align:right;padding-top:12px;border-top:1px solid var(--border2)">Total</td>
+        <td style="text-align:right;padding-top:12px;border-top:1px solid var(--border2)">${fmtVal(totalMonth)}</td>
+        <td colspan="2" style="padding-top:12px;border-top:1px solid var(--border2)"></td>
+      </tr></tfoot>
     </table>
     </div>`;
 }
@@ -655,6 +676,7 @@ function openModal(id) {
       ['nome','codigo','carro','fornecedor','obs'].forEach(k => document.getElementById('f-'+k).value = p[k]||'');
       document.getElementById('f-data').value = p.data||'';
       document.getElementById('f-valor').value = p.valor||'';
+      document.getElementById('f-qty').value = p.qtd||1;
       document.getElementById('f-status').value = p.status||'utilizada';
       document.getElementById('f-credito').value = p.credito||'pendente';
     }
@@ -662,6 +684,7 @@ function openModal(id) {
     ['nome','codigo','carro','fornecedor','obs'].forEach(k => document.getElementById('f-'+k).value = '');
     document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
     document.getElementById('f-valor').value = '';
+    document.getElementById('f-qty').value = 1;
     document.getElementById('f-status').value = 'utilizada';
     document.getElementById('f-credito').value = 'pendente';
   }
@@ -677,7 +700,8 @@ function salvar() {
     carro: document.getElementById('f-carro').value.trim(),
     fornecedor: document.getElementById('f-fornecedor').value.trim(),
     data: document.getElementById('f-data').value,
-    valor: parseFloat(document.getElementById('f-valor').value)||0,
+    valor: Math.round((parseFloat(document.getElementById('f-valor').value)||0) * 100) / 100,
+    qtd: parseInt(document.getElementById('f-qty').value, 10) || 1,
     status: document.getElementById('f-status').value,
     credito: document.getElementById('f-credito').value,
     obs: document.getElementById('f-obs').value.trim()

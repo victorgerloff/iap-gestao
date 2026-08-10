@@ -131,8 +131,8 @@
   .date-input { width: 138px; font-size: 12px; padding: 6px 10px; }
 
   /* Cards */
-  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 10px; position: relative; }
-  .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; padding-right: 64px; }
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 10px; }
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
   .piece-name { font-size: 14px; font-weight: 600; color: var(--text); }
   .piece-code { font-size: 12px; color: var(--text3); margin-top: 2px; }
   .badges { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; flex-shrink: 0; }
@@ -142,7 +142,7 @@
   .badge.credited { background: var(--leaf-bg); color: var(--leaf-text); }
   .badge.pending { background: var(--amber-bg); color: var(--amber-text); }
 
-  .card-corner-actions { position: absolute; top: 14px; right: 16px; display: flex; gap: 4px; }
+  .card-actions-right { display: flex; gap: 8px; }
   .icon-btn { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 0.5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; font-size: 13px; transition: all 0.15s; }
   .icon-btn:hover { background: var(--surface2); color: var(--text); }
   .icon-btn.danger { color: var(--red); border-color: var(--red); }
@@ -152,7 +152,7 @@
   @media(max-width:480px){ .piece-meta { grid-template-columns: 1fr 1fr; } }
   .meta-item { font-size: 11px; color: var(--text3); }
   .meta-item span { display: block; font-size: 13px; color: var(--text); margin-top: 2px; font-weight: 500; }
-  .piece-footer { display: flex; align-items: center; justify-content: flex-end; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--border); flex-wrap: wrap; gap: 8px; }
+  .piece-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--border); flex-wrap: wrap; gap: 16px; }
   .piece-obs { font-size: 12px; color: var(--amber-text); background: var(--amber-bg); width: 100%; text-align: left; padding: 8px 12px; border-radius: 8px; margin-top: 2px; display: flex; align-items: flex-start; gap: 6px; }
 
   .credit-toggle { display: inline-flex; border-radius: 7px; overflow: hidden; border: 0.5px solid var(--border2); }
@@ -193,7 +193,7 @@
   .summary-table tr:last-child td { border-bottom: none; }
   .print-btn { margin-left: auto; }
   @media print {
-    .tabs, .header .btn-primary, .card-corner-actions, .modal-overlay, .print-btn, .month-nav button { display: none !important; }
+    .tabs, .header .btn-primary, .card-actions-right, .modal-overlay, .print-btn, .month-nav button { display: none !important; }
     .section { display: block !important; }
     .app { padding: 0; }
     body { background: #fff; color: #000; }
@@ -499,10 +499,6 @@ function cardHTML(p) {
       </div>`
     : '';
   return `<div class="card">
-    <div class="card-corner-actions">
-      <button class="icon-btn" onclick="openModal('${p.id}')" title="Edit"><i class="ti ti-edit"></i></button>
-      <button class="icon-btn danger" onclick="deletar('${p.id}')" title="Delete"><i class="ti ti-trash"></i></button>
-    </div>
     <div class="card-header">
       <div>
         <div class="piece-name">${p.nome}</div>
@@ -518,7 +514,11 @@ function cardHTML(p) {
     </div>
     <div class="piece-footer">
       ${p.obs ? `<div class="piece-obs"><i class="ti ti-note"></i><span>${p.obs}</span></div>` : ''}
-      ${creditToggle}
+      <div>${creditToggle}</div>
+      <div class="card-actions-right">
+        <button class="icon-btn" onclick="openModal('${p.id}')" title="Edit"><i class="ti ti-edit"></i></button>
+        <button class="icon-btn danger" onclick="deletar('${p.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+      </div>
     </div>
   </div>`;
 }

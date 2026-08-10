@@ -97,6 +97,12 @@
   .tabs { display: flex; gap: 4px; background: var(--surface2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 5px; width: fit-content; margin-bottom: 1.25rem; flex-wrap: wrap; }
   .tab { padding: 9px 18px; font-size: 14px; border-radius: 7px; cursor: pointer; color: var(--text2); border: none; background: transparent; font-weight: 500; transition: all 0.15s; white-space: nowrap; }
   .tab.active { background: var(--surface); color: var(--text); border: 0.5px solid var(--border2); }
+  @media(min-width:601px){
+    .logo-text { text-transform: uppercase; letter-spacing: 0.5px; }
+    .logo-icon { width: 78px; height: 78px; font-size: 39px; border-radius: 20px; }
+    .tabs { width: 100%; }
+    .tab { flex: 1; text-align: center; }
+  }
   .tab:hover:not(.active) { color: var(--text); }
 
   .section { display: none; }

@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Gestão de Peças — International Auto Parts</title>
+<title>Gestão de Peças Planet Automotive Group</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <style>
   :root {
@@ -54,13 +54,31 @@
     }
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  body {
+    font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+    background: #000;
+    color: var(--text);
+    min-height: 100vh;
+    position: relative;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: -30px;
+    background-image: url('assets/logo-planet.jpg');
+    background-size: cover;
+    background-position: center;
+    filter: blur(35px) brightness(0.35);
+    opacity: 0.6;
+    z-index: -1;
+  }
 
   /* Layout */
   .app { max-width: 860px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
   .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
   .logo { display: flex; align-items: center; gap: 12px; }
-  .logo-icon { width: 40px; height: 40px; background: var(--navy); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; flex-shrink: 0; }
+  .logo-icon { width: 40px; height: 40px; background: var(--navy); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; flex-shrink: 0; overflow: hidden; }
+  .logo-icon img { width: 100%; height: 100%; object-fit: cover; }
   .logo-text { font-size: 16px; font-weight: 600; color: var(--text); }
   .logo-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
   .sync-badge { font-size: 11px; color: var(--green); display: inline-flex; align-items: center; gap: 4px; }
@@ -179,10 +197,10 @@
 <div class="app">
   <div class="header">
     <div class="logo">
-      <div class="logo-icon"><i class="ti ti-car"></i></div>
+      <div class="logo-icon"><img src="assets/logo-planet.jpg" alt="Planet Automotive Group"></div>
       <div>
         <div class="logo-text">Gestão de Peças</div>
-        <div class="logo-sub">International Auto Parts &nbsp;<span id="sync-status" class="sync-badge"></span></div>
+        <div class="logo-sub">Planet Automotive Group &nbsp;<span id="sync-status" class="sync-badge"></span></div>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
@@ -659,6 +677,10 @@ function deletar(id) {
 function toggleCredito(id) {
   const p = DB.find(x=>x.id===id);
   const novo = p.credito === 'creditada' ? 'pendente' : 'creditada';
+  const msg = novo === 'creditada'
+    ? `Confirma que a peça "${p.nome}" foi creditada?`
+    : `Confirma que a peça "${p.nome}" está com crédito pendente?`;
+  if (!confirm(msg)) return;
   window.IAP_FB.updateCredito(id, novo).catch(e=>alert('Erro: '+e.message));
 }
 function setTab(tab) {

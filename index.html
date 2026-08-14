@@ -517,11 +517,15 @@ function cardHTML(p) {
         <button class="credit-opt ${p.credito==='pendente'?'active-red':''}" onclick="setCredito('${p.id}','pendente')">Pending</button>
       </div>`
     : '';
+  const codeLine = [
+    p.codigo ? `<i class="ti ti-barcode" style="font-size:11px"></i> ${p.codigo}` : '',
+    p.invoice ? `<i class="ti ti-file-invoice" style="font-size:11px"></i> ${p.invoice}` : ''
+  ].filter(Boolean).join(' &nbsp;·&nbsp; ');
   return `<div class="card">
     <div class="card-header">
       <div>
         <div class="piece-name">${p.nome}</div>
-        ${p.codigo ? `<div class="piece-code"><i class="ti ti-barcode" style="font-size:11px"></i> ${p.codigo}</div>` : ''}
+        ${codeLine ? `<div class="piece-code">${codeLine}</div>` : ''}
       </div>
       <div class="badges">${sb}</div>
     </div>

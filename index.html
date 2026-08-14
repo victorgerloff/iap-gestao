@@ -260,6 +260,9 @@
         <option value="creditada">Credited</option>
         <option value="pendente">Pending</option>
       </select>
+      <select class="filter-select" onchange="renderAll()" id="filter-supplier-todas">
+        <option value="">All suppliers</option>
+      </select>
       <button class="btn-ghost" onclick="toggleSort()"><i class="ti ti-arrows-sort"></i> <span id="sort-label">Newest first</span></button>
     </div>
     <div class="filters">
@@ -566,13 +569,16 @@ function renderStats() {
 }
 
 function renderTodas() {
+  populateSupplierFilter('filter-supplier-todas', false);
   const search = (document.getElementById('search')?.value||'').toLowerCase();
   const fS = document.getElementById('filter-status')?.value||'';
   const fC = document.getElementById('filter-credito')?.value||'';
+  const fSup = document.getElementById('filter-supplier-todas')?.value||'';
   const filtered = DB.filter(p => {
     if(search && !`${p.nome} ${p.codigo} ${p.carro} ${p.fornecedor}`.toLowerCase().includes(search)) return false;
     if(fS && p.status !== fS) return false;
     if(fC && p.credito !== fC) return false;
+    if(fSup && p.fornecedor !== fSup) return false;
     return inPeriod(p.data, 'date-from', 'date-to');
   });
   const sorted = sortByDate(filtered);

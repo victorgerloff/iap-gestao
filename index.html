@@ -260,12 +260,12 @@
         <option value="creditada">Credited</option>
         <option value="pendente">Pending</option>
       </select>
-      <select class="filter-select" onchange="renderAll()" id="filter-supplier-todas">
-        <option value="">All suppliers</option>
-      </select>
       <button class="btn-ghost" onclick="toggleSort()"><i class="ti ti-arrows-sort"></i> <span id="sort-label">Newest first</span></button>
     </div>
     <div class="filters">
+      <select class="filter-select" onchange="renderAll()" id="filter-supplier-todas">
+        <option value="">All suppliers</option>
+      </select>
       <span class="filter-row-label"><i class="ti ti-calendar" style="font-size:14px"></i> Period:</span>
       <input type="date" class="date-input" id="date-from" onchange="renderAll()">
       <span class="filter-row-label">to</span>

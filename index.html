@@ -343,8 +343,11 @@
   <div class="modal">
     <div class="modal-title" id="modal-title">New Part</div>
     <div class="form-grid">
-      <div class="form-group"><label>Part Name *</label><input type="text" id="f-nome" placeholder="E.g.: Oil filter"></div>
-      <div class="form-group"><label>Part Code</label><input type="text" id="f-codigo" placeholder="E.g.: 15400-PLM-A02"></div>
+      <div class="form-trio">
+        <div class="form-group"><label>Part Name *</label><input type="text" id="f-nome" placeholder="E.g.: Oil filter"></div>
+        <div class="form-group"><label>Part Code</label><input type="text" id="f-codigo" placeholder="E.g.: 15400-PLM-A02"></div>
+        <div class="form-group"><label>Invoice</label><input type="text" id="f-invoice" placeholder="E.g.: INV-10293"></div>
+      </div>
       <div class="form-pair">
         <div class="form-group"><label>Vehicle</label><input type="text" id="f-carro" placeholder="E.g.: Honda Civic 2019"></div>
         <div class="form-group"><label>Supplier</label><input type="text" id="f-fornecedor" placeholder="E.g.: John Smith"></div>
@@ -676,7 +679,7 @@ function openModal(id) {
   if(id) {
     const p = DB.find(x => x.id === id);
     if(p) {
-      ['nome','codigo','carro','fornecedor','obs'].forEach(k => document.getElementById('f-'+k).value = p[k]||'');
+      ['nome','codigo','invoice','carro','fornecedor','obs'].forEach(k => document.getElementById('f-'+k).value = p[k]||'');
       document.getElementById('f-data').value = p.data||'';
       document.getElementById('f-valor').value = p.valor||'';
       document.getElementById('f-qty').value = p.qtd||1;
@@ -684,7 +687,7 @@ function openModal(id) {
       document.getElementById('f-credito').value = p.credito||'pendente';
     }
   } else {
-    ['nome','codigo','carro','fornecedor','obs'].forEach(k => document.getElementById('f-'+k).value = '');
+    ['nome','codigo','invoice','carro','fornecedor','obs'].forEach(k => document.getElementById('f-'+k).value = '');
     document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
     document.getElementById('f-valor').value = '';
     document.getElementById('f-qty').value = 1;
@@ -700,6 +703,7 @@ function salvar() {
   const p = {
     id: editId || Date.now().toString(),
     nome, codigo: document.getElementById('f-codigo').value.trim(),
+    invoice: document.getElementById('f-invoice').value.trim(),
     carro: document.getElementById('f-carro').value.trim(),
     fornecedor: document.getElementById('f-fornecedor').value.trim(),
     data: document.getElementById('f-data').value,

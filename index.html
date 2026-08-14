@@ -134,7 +134,8 @@
   .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 10px; }
   .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
   .piece-name { font-size: 14px; font-weight: 600; color: var(--text); }
-  .piece-code { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .piece-code { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text3); margin-top: 6px; }
+  .piece-code .part-number { font-size: 13px; font-weight: 700; color: var(--text2); }
   .badges { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; flex-shrink: 0; }
   .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
   .badge.returned { background: var(--green-bg); color: var(--green-text); }
@@ -299,6 +300,9 @@
   <!-- CRÉDITOS -->
   <div class="section" id="sec-creditos">
     <div class="filters">
+      <select class="filter-select" onchange="renderAll()" id="filter-supplier-credito">
+        <option value="">All suppliers</option>
+      </select>
       <span class="filter-row-label"><i class="ti ti-calendar" style="font-size:14px"></i> Period:</span>
       <input type="date" class="date-input" id="cdate-from" onchange="renderAll()">
       <span class="filter-row-label">to</span>
@@ -518,9 +522,9 @@ function cardHTML(p) {
       </div>`
     : '';
   const codeLine = [
-    p.codigo ? `<i class="ti ti-barcode" style="font-size:11px"></i> ${p.codigo}` : '',
-    p.invoice ? `<i class="ti ti-file-invoice" style="font-size:11px"></i> ${p.invoice}` : ''
-  ].filter(Boolean).join(' &nbsp;·&nbsp; ');
+    p.codigo ? `<span class="part-number"><i class="ti ti-barcode" style="font-size:12px"></i> ${p.codigo}</span>` : '',
+    p.invoice ? `<span><i class="ti ti-file-invoice" style="font-size:11px"></i> ${p.invoice}</span>` : ''
+  ].filter(Boolean).join('');
   return `<div class="card">
     <div class="card-header">
       <div>
@@ -580,8 +584,28 @@ function renderSec(listId, filter, fromId, toId) {
   document.getElementById(listId).innerHTML = arr.length ? arr.map(cardHTML).join('') : emptyHTML();
 }
 
+function populateSupplierFilter() {
+  const sel = document.getElementById('filter-supplier-credito');
+  if (!sel) return;
+  const current = sel.value;
+  const suppliers = [...new Set(DB.filter(p => p.status === 'devolvida' && p.fornecedor).map(p => p.fornecedor))].sort();
+  sel.innerHTML = '<option value="">All suppliers</option>' + suppliers.map(s => `<option value="${s}">${s}</option>`).join('');
+  if (suppliers.includes(current)) sel.value = current;
+}
+
 function renderCreditos() {
-  const all = DB.filter(p => p.status === 'devolvida' && inPeriod(p.data, 'cdate-from', 'cdate-to'));
+  populateSupplierFilter();
+  const supplierFilter = document.getElementById('filter-supplier-credito')?.value || '';
+  const inPeriodAll = DB.filter(p => p.status === 'devolvida' && inPeriod(p.data, 'cdate-from', 'cdate-to'));
+
+  const bySupplierPending = {};
+  inPeriodAll.filter(p => p.credito === 'pendente').forEach(p => {
+    const key = p.fornecedor || '—';
+    bySupplierPending[key] = (bySupplierPending[key] || 0) + p.valor;
+  });
+  const supplierRows = Object.entries(bySupplierPending).sort((a, b) => b[1] - a[1]);
+
+  const all = inPeriodAll.filter(p => !supplierFilter || p.fornecedor === supplierFilter);
   const credited = all.filter(p => p.credito === 'creditada');
   const pending = all.filter(p => p.credito === 'pendente');
   const totalCred = credited.reduce((s,p)=>s+p.valor,0);
@@ -595,6 +619,13 @@ function renderCreditos() {
     <div class="credit-row"><span>Awaiting credit</span><span class="val-red">${fmtVal(totalPend)}</span></div>
     <div class="total-credit-row"><span>Balance due</span><span class="val-red">${fmtVal(totalPend)}</span></div>
   </div>`;
+  if(supplierRows.length) {
+    html += `<div class="report-section-title">Pending credit by supplier</div>
+    <table class="summary-table">
+      <thead><tr><th>Supplier</th><th style="text-align:right">Pending credit</th></tr></thead>
+      <tbody>${supplierRows.map(([s,v]) => `<tr><td>${s}</td><td style="text-align:right;font-weight:600" class="val-red">${fmtVal(v)}</td></tr>`).join('')}</tbody>
+    </table>`;
+  }
   if(pending.length) {
     html += `<div class="report-section-title">Pending (${pending.length})</div>${sortByDate(pending).map(cardHTML).join('')}`;
   }

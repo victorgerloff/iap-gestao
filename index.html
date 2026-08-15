@@ -149,8 +149,7 @@
   .icon-btn.danger { color: var(--red); border-color: var(--red); }
   .icon-btn.danger:hover { background: var(--red-bg); }
 
-  .piece-meta { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--border); }
-  @media(max-width:600px){ .piece-meta { grid-template-columns: 1fr 1fr; } }
+  .piece-meta { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 10px 28px; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--border); }
   .meta-item { font-size: 11px; color: var(--text3); }
   .meta-item span { display: block; font-size: 13px; color: var(--text); margin-top: 2px; font-weight: 500; }
   .piece-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--border); flex-wrap: wrap; gap: 16px; }
@@ -524,10 +523,7 @@ function cardHTML(p) {
         <button class="credit-opt ${p.credito==='pendente'?'active-red':''}" onclick="setCredito('${p.id}','pendente')">Pending</button>
       </div>`
     : '';
-  const codeLine = [
-    p.codigo ? `<span class="part-number"><i class="ti ti-barcode" style="font-size:12px"></i> ${p.codigo}</span>` : '',
-    p.invoice ? `<span><i class="ti ti-file-invoice" style="font-size:11px"></i> ${p.invoice}</span>` : ''
-  ].filter(Boolean).join('');
+  const codeLine = p.codigo ? `<span class="part-number"><i class="ti ti-barcode" style="font-size:12px"></i> ${p.codigo}</span>` : '';
   return `<div class="card">
     <div class="card-header">
       <div>
@@ -542,6 +538,7 @@ function cardHTML(p) {
       <div class="meta-item"><i class="ti ti-calendar" style="font-size:11px"></i> Date<span>${fmtDate(p.data)}</span></div>
       <div class="meta-item"><i class="ti ti-currency-dollar" style="font-size:11px"></i> Amount<span>${fmtVal(p.valor)}</span></div>
       <div class="meta-item"><i class="ti ti-stack" style="font-size:11px"></i> Qty<span>${p.qtd||1}</span></div>
+      ${p.invoice ? `<div class="meta-item"><i class="ti ti-file-invoice" style="font-size:11px"></i> Invoice<span>${p.invoice}</span></div>` : ''}
     </div>
     <div class="piece-footer">
       ${p.obs ? `<div class="piece-obs"><i class="ti ti-note"></i><span>${p.obs}</span></div>` : ''}

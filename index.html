@@ -166,10 +166,7 @@
   .meta-item { flex: 1 1 0; min-width: 70px; font-size: 11px; color: var(--text3); }
   .meta-item span { display: block; font-size: 13px; color: var(--text); margin-top: 2px; font-weight: 500; }
   .piece-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--border); flex-wrap: wrap; gap: 16px; }
-  .piece-obs { font-size: 12px; width: 100%; text-align: left; padding: 8px 12px; border-radius: 8px; margin-top: 2px; display: flex; align-items: flex-start; gap: 6px; }
-  .piece-obs.internal { color: var(--amber-text); background: var(--amber-bg); }
-  .piece-obs.customer { color: var(--blue-text); background: var(--blue-bg); }
-  .piece-obs b { font-weight: 700; }
+  .piece-obs { font-size: 12px; color: var(--amber-text); background: var(--amber-bg); width: 100%; text-align: left; padding: 8px 12px; border-radius: 8px; margin-top: 2px; display: flex; align-items: flex-start; gap: 6px; }
 
   .credit-toggle { display: inline-flex; border-radius: 7px; overflow: hidden; border: 0.5px solid var(--border2); }
   .credit-opt { padding: 6px 14px; font-size: 12px; font-weight: 600; border: none; background: var(--surface2); color: var(--text2); cursor: pointer; transition: all 0.15s; }
@@ -391,8 +388,7 @@
           <option value="creditada">Credited</option>
         </select>
       </div>
-      <div class="form-group full"><label>Internal Notes</label><input type="text" id="f-obs" placeholder="Only your team can see this..."></div>
-      <div class="form-group full"><label>Customer Notes</label><input type="text" id="f-obsCliente" placeholder="Visible to the customer on the quote..."></div>
+      <div class="form-group full"><label>Notes</label><input type="text" id="f-obs" placeholder="Additional notes..."></div>
     </div>
     <div class="modal-actions">
       <button class="btn-ghost" onclick="closeModal()">Cancel</button>
@@ -558,8 +554,7 @@ function cardHTML(p) {
       ${p.invoice ? `<div class="meta-item"><i class="ti ti-file-invoice" style="font-size:11px"></i> Invoice<span>${p.invoice}</span></div>` : ''}
     </div>
     <div class="piece-footer">
-      ${p.obs ? `<div class="piece-obs internal"><i class="ti ti-note"></i><span><b>Internal:</b> ${p.obs}</span></div>` : ''}
-      ${p.obsCliente ? `<div class="piece-obs customer"><i class="ti ti-message-circle"></i><span><b>Customer:</b> ${p.obsCliente}</span></div>` : ''}
+      ${p.obs ? `<div class="piece-obs"><i class="ti ti-note"></i><span>${p.obs}</span></div>` : ''}
       <div>${creditToggle}</div>
       <div class="card-actions-right">
         <button class="icon-btn" onclick="openModal('${p.id}')" title="Edit"><i class="ti ti-edit"></i></button>
@@ -738,7 +733,7 @@ function openModal(id) {
   if(id) {
     const p = DB.find(x => x.id === id);
     if(p) {
-      ['nome','codigo','invoice','carro','fornecedor','obs','obsCliente'].forEach(k => document.getElementById('f-'+k).value = p[k]||'');
+      ['nome','codigo','invoice','carro','fornecedor','obs'].forEach(k => document.getElementById('f-'+k).value = p[k]||'');
       document.getElementById('f-data').value = p.data||'';
       document.getElementById('f-valor').value = p.valor||'';
       document.getElementById('f-qty').value = p.qtd||1;
@@ -746,7 +741,7 @@ function openModal(id) {
       document.getElementById('f-credito').value = p.credito||'pendente';
     }
   } else {
-    ['nome','codigo','invoice','carro','fornecedor','obs','obsCliente'].forEach(k => document.getElementById('f-'+k).value = '');
+    ['nome','codigo','invoice','carro','fornecedor','obs'].forEach(k => document.getElementById('f-'+k).value = '');
     document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
     document.getElementById('f-valor').value = '';
     document.getElementById('f-qty').value = 1;
@@ -770,8 +765,7 @@ function salvar() {
     qtd: parseInt(document.getElementById('f-qty').value, 10) || 1,
     status: document.getElementById('f-status').value,
     credito: document.getElementById('f-credito').value,
-    obs: document.getElementById('f-obs').value.trim(),
-    obsCliente: document.getElementById('f-obsCliente').value.trim()
+    obs: document.getElementById('f-obs').value.trim()
   };
   window.IAP_FB.savePeca(p).then(()=>{ closeModal(); }).catch(e=>alert('Error saving: '+e.message));
 }

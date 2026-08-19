@@ -206,6 +206,18 @@
   .summary-table tr:last-child td { border-bottom: none; }
   .print-btn { margin-left: auto; }
   @media print {
+    :root {
+      --bg: #ffffff; --surface: #ffffff; --surface2: #f0efe9;
+      --border: rgba(0,0,0,0.10); --border2: rgba(0,0,0,0.18);
+      --text: #1a1a18; --text2: #6b6b65; --text3: #9b9b93;
+      --green-bg: #E1F5EE; --green-text: #0F6E56;
+      --amber-bg: #FAEEDA; --amber-text: #854F0B;
+      --red-bg: #FCEBEB; --red-text: #791F1F;
+      --blue-bg: #E6F1FB; --blue-text: #185FA5;
+      --leaf-bg: #EAF3DE; --leaf-text: #3B6D11;
+    }
+    body::before { display: none !important; }
+    .logo-text { color: #000 !important; }
     .tabs, .header .btn-primary, .card-actions-right, .modal-overlay, .print-btn, .month-nav button, #filter-supplier-report { display: none !important; }
     .section { display: none !important; }
     .section.active { display: block !important; }
@@ -701,11 +713,23 @@ function renderReport() {
         <th>Part</th><th>Vehicle</th><th>Supplier</th><th>Date</th><th style="text-align:right">Value</th><th>Status</th><th>Credit</th>
       </tr></thead>
       <tbody>${tableRows}</tbody>
-      <tfoot><tr style="font-weight:700">
-        <td colspan="4" style="text-align:right;padding-top:12px;border-top:1px solid var(--border2)">Total</td>
-        <td style="text-align:right;padding-top:12px;border-top:1px solid var(--border2)">${fmtVal(totalMonth)}</td>
-        <td colspan="2" style="padding-top:12px;border-top:1px solid var(--border2)"></td>
-      </tr></tfoot>
+      <tfoot>
+        <tr style="font-weight:700">
+          <td colspan="4" style="text-align:right;padding-top:12px;border-top:1px solid var(--border2)">Total</td>
+          <td style="text-align:right;padding-top:12px;border-top:1px solid var(--border2)">${fmtVal(totalMonth)}</td>
+          <td colspan="2" style="padding-top:12px;border-top:1px solid var(--border2)"></td>
+        </tr>
+        <tr style="font-weight:600">
+          <td colspan="4" style="text-align:right" class="val-green">Credited total</td>
+          <td style="text-align:right" class="val-green">${fmtVal(totalCred)}</td>
+          <td colspan="2"></td>
+        </tr>
+        <tr style="font-weight:600">
+          <td colspan="4" style="text-align:right" class="val-red">Not credited total</td>
+          <td style="text-align:right" class="val-red">${fmtVal(totalPend)}</td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
     </table>
     </div>`;
 }

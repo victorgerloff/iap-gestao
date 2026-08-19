@@ -204,6 +204,9 @@
   .summary-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); font-weight: 600; padding: 6px 10px; border-bottom: 0.5px solid var(--border2); }
   .summary-table td { padding: 9px 10px; border-bottom: 0.5px solid var(--border); }
   .summary-table tr:last-child td { border-bottom: none; }
+  .report-totals { background: var(--surface2); border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 12px 16px; margin-top: 4px; break-inside: avoid; page-break-inside: avoid; }
+  .report-totals-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; padding: 5px 0; }
+  .report-totals-row.grand { font-size: 16px; font-weight: 700; border-bottom: 1px solid var(--border2); margin-bottom: 2px; padding-bottom: 8px; }
   .print-btn { margin-left: auto; }
   @media print {
     :root {
@@ -713,24 +716,12 @@ function renderReport() {
         <th>Part</th><th>Vehicle</th><th>Supplier</th><th>Date</th><th style="text-align:right">Value</th><th>Status</th><th>Credit</th>
       </tr></thead>
       <tbody>${tableRows}</tbody>
-      <tfoot>
-        <tr style="font-weight:700">
-          <td colspan="4" style="text-align:right;padding-top:12px;border-top:1px solid var(--border2)">Total</td>
-          <td style="text-align:right;padding-top:12px;border-top:1px solid var(--border2)">${fmtVal(totalMonth)}</td>
-          <td colspan="2" style="padding-top:12px;border-top:1px solid var(--border2)"></td>
-        </tr>
-        <tr style="font-weight:600">
-          <td colspan="4" style="text-align:right" class="val-green">Credited total</td>
-          <td style="text-align:right" class="val-green">${fmtVal(totalCred)}</td>
-          <td colspan="2"></td>
-        </tr>
-        <tr style="font-weight:600">
-          <td colspan="4" style="text-align:right" class="val-red">Not credited total</td>
-          <td style="text-align:right" class="val-red">${fmtVal(totalPend)}</td>
-          <td colspan="2"></td>
-        </tr>
-      </tfoot>
     </table>
+    </div>
+    <div class="report-totals">
+      <div class="report-totals-row grand"><span>Total</span><span>${fmtVal(totalMonth)}</span></div>
+      <div class="report-totals-row val-green"><span>Credited total</span><span>${fmtVal(totalCred)}</span></div>
+      <div class="report-totals-row val-red"><span>Not credited total</span><span>${fmtVal(totalPend)}</span></div>
     </div>`;
 }
 

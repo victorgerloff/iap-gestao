@@ -771,6 +771,15 @@ function openModal(id) {
   document.getElementById('modal').classList.add('open');
 }
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function findDuplicate(p) {
+  const norm = s => (s||'').trim().toLowerCase();
+  return DB.find(x => x.id !== p.id &&
+    norm(x.nome) === norm(p.nome) &&
+    norm(x.codigo) === norm(p.codigo) &&
+    norm(x.carro) === norm(p.carro) &&
+    norm(x.fornecedor) === norm(p.fornecedor)
+  );
+}
 function salvar() {
   const nome = document.getElementById('f-nome').value.trim();
   if (!nome) { alert('Enter the part name'); return; }
@@ -787,6 +796,8 @@ function salvar() {
     credito: document.getElementById('f-credito').value,
     obs: document.getElementById('f-obs').value.trim()
   };
+  const dup = findDuplicate(p);
+  if (dup && !confirm(`A part with the same name, code, vehicle and supplier is already registered ("${dup.nome}", ${dup.carro || 'no vehicle'}). Save anyway?`)) return;
   window.IAP_FB.savePeca(p).then(()=>{ closeModal(); }).catch(e=>alert('Error saving: '+e.message));
 }
 function deletar(id) {

@@ -222,7 +222,7 @@
     * { font-family: Arial, Helvetica, sans-serif !important; letter-spacing: normal !important; }
     body::before { display: none !important; }
     .logo-text { color: #000 !important; }
-    .tabs, .header .btn-primary, .card-actions-right, .modal-overlay, .print-btn, .month-nav button, #filter-supplier-report { display: none !important; }
+    .tabs, .header .btn-primary, .card-actions-right, .modal-overlay, .print-btn, .month-nav button, #filter-supplier-report, .side-notes { display: none !important; }
     .section { display: none !important; }
     .section.active { display: block !important; }
     .app { padding: 0; }
@@ -244,6 +244,27 @@
   .empty { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 13px; }
   .empty i { font-size: 36px; display: block; margin-bottom: 8px; opacity: 0.5; }
   .period-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; background: var(--surface2); border-radius: 20px; font-size: 12px; color: var(--text2); margin-left: 6px; }
+
+  /* Supplier sticky notes (desktop side margins) */
+  .side-notes { position: fixed; top: 110px; width: 190px; display: flex; flex-direction: column; gap: 14px; max-height: calc(100vh - 140px); overflow-y: auto; z-index: 5; }
+  .side-notes.left { left: calc(50% - 640px); }
+  .side-notes.right { right: calc(50% - 640px); }
+  @media(max-width: 1350px) { .side-notes { display: none; } }
+  .notes-list { display: flex; flex-direction: column; gap: 14px; }
+  .add-note-btn { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.75); align-self: flex-start; }
+  .add-note-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  .sticky-note { padding: 12px 12px 28px; border-radius: 2px; font-size: 12px; line-height: 1.4; box-shadow: 3px 5px 12px rgba(0,0,0,0.4); position: relative; word-break: break-word; }
+  .sticky-note:nth-child(4n+1) { background: #fff4a3; color: #4a4315; transform: rotate(-1.5deg); }
+  .sticky-note:nth-child(4n+2) { background: #ffc9de; color: #5c2438; transform: rotate(1.5deg); }
+  .sticky-note:nth-child(4n+3) { background: #c9f2c0; color: #244a1c; transform: rotate(-1deg); }
+  .sticky-note:nth-child(4n+4) { background: #bfe3ff; color: #1b3d5c; transform: rotate(1deg); }
+  .sticky-note .note-supplier { font-weight: 700; display: block; margin-bottom: 4px; }
+  .sticky-note .note-delete { position: absolute; bottom: 6px; right: 8px; background: none; border: none; cursor: pointer; opacity: 0.55; font-size: 13px; color: inherit; padding: 2px; }
+  .sticky-note .note-delete:hover { opacity: 1; }
+  .note-form { background: var(--surface); border: 0.5px solid var(--border2); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 6px; box-shadow: 3px 5px 12px rgba(0,0,0,0.4); }
+  .note-form input, .note-form textarea { font-size: 12px; width: 100%; }
+  .note-form textarea { resize: vertical; min-height: 50px; font-family: inherit; }
+  .note-form-actions { display: flex; gap: 6px; justify-content: flex-end; }
 </style>
 </head>
 <body>
@@ -363,6 +384,16 @@
   </div>
 </div>
 
+<!-- SUPPLIER NOTES (desktop side margins) -->
+<div class="side-notes left" id="side-notes-left">
+  <button class="btn-ghost add-note-btn" onclick="openNoteForm('left')"><i class="ti ti-plus"></i> Add note</button>
+  <div class="notes-list" id="notes-list-left"></div>
+</div>
+<div class="side-notes right" id="side-notes-right">
+  <button class="btn-ghost add-note-btn" onclick="openNoteForm('right')"><i class="ti ti-plus"></i> Add note</button>
+  <div class="notes-list" id="notes-list-right"></div>
+</div>
+
 <!-- LOGIN -->
 <div class="modal-overlay open" id="login-overlay">
   <div class="modal" style="max-width:360px;">
@@ -446,6 +477,12 @@
     listenPecas: (cb, onError) => onSnapshot(collection(dbFs, 'pecas'), snap => {
       const arr = snap.docs.map(d => Object.assign({}, d.data(), { id: d.id }));
       cb(arr);
+    }, onError),
+    saveNote: (n) => setDoc(doc(collection(dbFs, 'supplierNotes'), n.id), n),
+    deleteNote: (id) => deleteDoc(doc(collection(dbFs, 'supplierNotes'), id)),
+    listenNotes: (cb, onError) => onSnapshot(collection(dbFs, 'supplierNotes'), snap => {
+      const arr = snap.docs.map(d => Object.assign({}, d.data(), { id: d.id }));
+      cb(arr);
     }, onError)
   };
   window.dispatchEvent(new Event('iapFbReady'));
@@ -453,6 +490,7 @@
 <script>
 const LS_KEY = 'iap_pecas_v2';
 let DB = [];
+let NOTES = [];
 let editId = null;
 let currentTab = 'todas';
 let reportMonth = new Date().getMonth();
@@ -511,6 +549,7 @@ function initAuthFlow() {
       overlay.classList.remove('open');
       document.getElementById('user-email').textContent = user.email;
       window.IAP_FB.listenPecas(data => { DB = data; renderAll(); showSync(); }, showSyncError);
+      window.IAP_FB.listenNotes(data => { NOTES = data; renderNotes(); }, () => {});
     } else {
       overlay.classList.add('open');
       document.getElementById('user-email').textContent = '';
@@ -524,7 +563,15 @@ function fmtVal(v) { return 'US$ ' + (v||0).toLocaleString('en-US', {minimumFrac
 function fmtDate(d) { if(!d) return '—'; const [y,m,di] = d.split('-'); return m+'/'+di+'/'+y.slice(-2); }
 let sortDir = 'desc';
 function sortByDate(arr) {
-  return [...arr].sort((a,b) => sortDir === 'asc' ? (a.data||'').localeCompare(b.data||'') : (b.data||'').localeCompare(a.data||''));
+  return [...arr].sort((a,b) => {
+    const dateCmp = (a.data||'').localeCompare(b.data||'');
+    const primary = sortDir === 'asc' ? dateCmp : -dateCmp;
+    if (primary !== 0) return primary;
+    // Same date: break the tie by creation order (id is a Date.now() timestamp),
+    // so the most recently registered part shows first under "Newest first".
+    const idCmp = Number(a.id) - Number(b.id);
+    return sortDir === 'asc' ? idCmp : -idCmp;
+  });
 }
 function toggleSort() {
   sortDir = sortDir === 'asc' ? 'desc' : 'asc';
@@ -812,6 +859,54 @@ function setCredito(id, novo) {
     : `Confirm that part "${p.nome}" is credit pending?`;
   if (!confirm(msg)) return;
   window.IAP_FB.updateCredito(id, novo).catch(e=>alert('Error: '+e.message));
+}
+// Supplier sticky notes (desktop side margins)
+function noteHTML(n) {
+  return `<div class="sticky-note">
+    ${n.supplier ? `<span class="note-supplier">${n.supplier}</span>` : ''}
+    <span>${n.text||''}</span>
+    <button class="note-delete" onclick="deleteNote('${n.id}')" title="Delete"><i class="ti ti-x"></i></button>
+  </div>`;
+}
+function renderNotes() {
+  const left = document.getElementById('notes-list-left');
+  const right = document.getElementById('notes-list-right');
+  if (!left || !right) return;
+  const sorted = [...NOTES].sort((a,b) => Number(a.id) - Number(b.id));
+  left.innerHTML = sorted.filter((_,i) => i % 2 === 0).map(noteHTML).join('');
+  right.innerHTML = sorted.filter((_,i) => i % 2 === 1).map(noteHTML).join('');
+}
+function closeNoteForm(side) {
+  const form = document.getElementById('note-form-' + side);
+  if (form) form.remove();
+}
+function openNoteForm(side) {
+  closeNoteForm(side === 'left' ? 'right' : 'left');
+  const container = document.getElementById('notes-list-' + side);
+  if (!container || document.getElementById('note-form-' + side)) return;
+  const form = document.createElement('div');
+  form.className = 'note-form';
+  form.id = 'note-form-' + side;
+  form.innerHTML = `
+    <input type="text" placeholder="Supplier name" id="note-supplier-${side}">
+    <textarea placeholder="Note..." id="note-text-${side}"></textarea>
+    <div class="note-form-actions">
+      <button class="btn-ghost" onclick="closeNoteForm('${side}')">Cancel</button>
+      <button class="btn-primary" onclick="saveNoteForm('${side}')">Save</button>
+    </div>`;
+  container.prepend(form);
+  document.getElementById('note-supplier-' + side).focus();
+}
+function saveNoteForm(side) {
+  const supplier = document.getElementById('note-supplier-' + side).value.trim();
+  const text = document.getElementById('note-text-' + side).value.trim();
+  if (!text) { alert('Enter a note'); return; }
+  const n = { id: Date.now().toString(), supplier, text };
+  window.IAP_FB.saveNote(n).then(() => closeNoteForm(side)).catch(e => alert('Error saving note: ' + e.message));
+}
+function deleteNote(id) {
+  if (!confirm('Remove this note?')) return;
+  window.IAP_FB.deleteNote(id).catch(e => alert('Error removing note: ' + e.message));
 }
 function setTab(tab) {
   currentTab = tab;

@@ -302,7 +302,7 @@
   <!-- TODAS -->
   <div class="section active" id="sec-todas">
     <div class="filters">
-      <input type="text" class="search-input" placeholder="Search part, code, vehicle or supplier..." oninput="renderAll()" id="search">
+      <input type="text" class="search-input" placeholder="Search part, code, vehicle, supplier, invoice or notes..." oninput="renderAll()" id="search">
       <select class="filter-select" onchange="renderAll()" id="filter-status">
         <option value="">All statuses</option>
         <option value="utilizada">Not Returned</option>
@@ -652,7 +652,7 @@ function renderTodas() {
   const fC = document.getElementById('filter-credito')?.value||'';
   const fSup = document.getElementById('filter-supplier-todas')?.value||'';
   const filtered = DB.filter(p => {
-    if(search && !`${p.nome} ${p.codigo} ${p.carro} ${p.fornecedor}`.toLowerCase().includes(search)) return false;
+    if(search && !`${p.nome} ${p.codigo} ${p.carro} ${p.fornecedor} ${p.invoice||''} ${p.obs||''}`.toLowerCase().includes(search)) return false;
     if(fS && p.status !== fS) return false;
     if(fC && p.credito !== fC) return false;
     if(fSup && p.fornecedor !== fSup) return false;

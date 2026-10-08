@@ -222,7 +222,7 @@
     * { font-family: Arial, Helvetica, sans-serif !important; letter-spacing: normal !important; }
     body::before { display: none !important; }
     .logo-text { color: #000 !important; }
-    .tabs, .header .btn-primary, .card-actions-right, .modal-overlay, .print-btn, .month-nav button, #filter-supplier-report, .side-notes { display: none !important; }
+    .tabs, .header .btn-primary, .card-actions-right, .modal-overlay, .print-btn, .month-nav button, #filter-supplier-report, #report-period-row, .side-notes { display: none !important; }
     .section { display: none !important; }
     .section.active { display: block !important; }
     .app { padding: 0; }
@@ -379,6 +379,13 @@
         <option value="">All suppliers</option>
       </select>
       <button class="btn-ghost print-btn" onclick="window.print()"><i class="ti ti-printer"></i> Print</button>
+    </div>
+    <div class="filters" id="report-period-row">
+      <span class="filter-row-label"><i class="ti ti-calendar" style="font-size:14px"></i> Specific period:</span>
+      <input type="date" class="date-input" id="rdate-from" onchange="renderReport()">
+      <span class="filter-row-label">to</span>
+      <input type="date" class="date-input" id="rdate-to" onchange="renderReport()">
+      <button class="btn-ghost" onclick="clearDates('r')">Clear</button>
     </div>
     <div id="report-content"></div>
   </div>
@@ -727,7 +734,7 @@ function renderReport() {
   const yStr = String(reportYear);
   const mStr = String(reportMonth+1).padStart(2,'0');
   const prefix = `${yStr}-${mStr}`;
-  const month = DB.filter(p => p.data && p.data.startsWith(prefix) && (!supplierFilter || p.fornecedor === supplierFilter));
+  const month = DB.filter(p => p.data && p.data.startsWith(prefix) && (!supplierFilter || p.fornecedor === supplierFilter) && inPeriod(p.data, 'rdate-from', 'rdate-to'));
   const used = month.filter(p => p.status === 'utilizada');
   const returned = month.filter(p => p.status === 'devolvida');
   const credited = returned.filter(p => p.credito === 'creditada');
@@ -738,7 +745,8 @@ function renderReport() {
   const totalCred = credited.reduce((s,p)=>s+p.valor,0);
 
   if(!month.length) {
-    document.getElementById('report-content').innerHTML = '<div class="empty"><i class="ti ti-calendar-off"></i>No parts recorded this month</div>';
+    const periodActive = document.getElementById('rdate-from')?.value || document.getElementById('rdate-to')?.value;
+    document.getElementById('report-content').innerHTML = `<div class="empty"><i class="ti ti-calendar-off"></i>No parts recorded ${periodActive ? 'in the selected period' : 'this month'}</div>`;
     return;
   }
 
@@ -753,16 +761,16 @@ function renderReport() {
     <td>${p.status==='devolvida'?(p.credito==='creditada'?`<span class="badge credited">Yes</span>`:`<span class="badge pending">No</span>`):'—'}</td>
   </tr>`).join('');
 
+  const periodActive = document.getElementById('rdate-from')?.value || document.getElementById('rdate-to')?.value;
   document.getElementById('report-content').innerHTML = `
     <div class="report-summary">
-      <div class="report-card"><div class="report-card-label">Total spent</div><div class="report-card-val">${fmtVal(totalMonth)}</div></div>
-      <div class="report-card"><div class="report-card-label">Parts this month</div><div class="report-card-val">${month.length}</div></div>
+      <div class="report-card"><div class="report-card-label">${periodActive ? 'Parts in period' : 'Parts this month'}</div><div class="report-card-val">${month.length}</div></div>
       <div class="report-card"><div class="report-card-label">Not Returned</div><div class="report-card-val" style="color:var(--blue-text)">${used.length} — ${fmtVal(totalUsed)}</div></div>
       <div class="report-card"><div class="report-card-label">Returned</div><div class="report-card-val" style="color:var(--amber)">${returned.length} — ${fmtVal(totalRet)}</div></div>
       <div class="report-card"><div class="report-card-label">Credit received</div><div class="report-card-val" style="color:var(--green)">${fmtVal(totalCred)}</div></div>
       <div class="report-card"><div class="report-card-label">Credit pending</div><div class="report-card-val" style="color:var(--red)">${fmtVal(totalPend)}</div></div>
     </div>
-    <div class="report-section-title">All parts this month</div>
+    <div class="report-section-title">${periodActive ? 'Parts in selected period' : 'All parts this month'}</div>
     <div style="overflow-x:auto">
     <table class="summary-table">
       <thead><tr>
@@ -772,7 +780,7 @@ function renderReport() {
     </table>
     </div>
     <div class="report-totals">
-      <div class="report-totals-row grand"><span>Total</span><span>${fmtVal(totalMonth)}</span></div>
+      <div class="report-totals-row grand"><span>${periodActive ? 'Total in period' : 'Total'}</span><span>${fmtVal(totalMonth)}</span></div>
       <div class="report-totals-row val-green"><span>Credited total</span><span>${fmtVal(totalCred)}</span></div>
       <div class="report-totals-row val-red"><span>Not credited total</span><span>${fmtVal(totalPend)}</span></div>
     </div>`;

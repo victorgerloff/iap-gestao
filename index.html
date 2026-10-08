@@ -755,6 +755,7 @@ function renderReport() {
 
   document.getElementById('report-content').innerHTML = `
     <div class="report-summary">
+      <div class="report-card"><div class="report-card-label">Total spent</div><div class="report-card-val">${fmtVal(totalMonth)}</div></div>
       <div class="report-card"><div class="report-card-label">Parts this month</div><div class="report-card-val">${month.length}</div></div>
       <div class="report-card"><div class="report-card-label">Not Returned</div><div class="report-card-val" style="color:var(--blue-text)">${used.length} — ${fmtVal(totalUsed)}</div></div>
       <div class="report-card"><div class="report-card-label">Returned</div><div class="report-card-val" style="color:var(--amber)">${returned.length} — ${fmtVal(totalRet)}</div></div>

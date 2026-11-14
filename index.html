@@ -155,6 +155,10 @@
   .badge.used { background: var(--blue-bg); color: var(--blue-text); }
   .badge.credited { background: var(--leaf-bg); color: var(--leaf-text); }
   .badge.pending { background: var(--amber-bg); color: var(--amber-text); }
+  .badge.refused { background: var(--red-bg); color: var(--red-text); }
+  .mech-line { font-size: 12px; color: var(--text2); width: 100%; display: flex; align-items: flex-start; gap: 6px; }
+  .mech-alert { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; background: var(--red-bg); color: var(--red-text); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+  a.btn-ghost { text-decoration: none; }
 
   .card-actions-right { display: flex; gap: 8px; }
   .icon-btn { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 0.5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; font-size: 13px; transition: all 0.15s; }
@@ -222,7 +226,7 @@
     * { font-family: Arial, Helvetica, sans-serif !important; letter-spacing: normal !important; }
     body::before { display: none !important; }
     .logo-text { color: #000 !important; }
-    .tabs, .header .btn-primary, .card-actions-right, .modal-overlay, .print-btn, .month-nav button, #filter-supplier-report, #report-period-row, .side-notes { display: none !important; }
+    .tabs, .header .btn-primary, .card-actions-right, .modal-overlay, .print-btn, .month-nav button, #filter-supplier-report, #report-period-row, .side-notes, .mech-alert { display: none !important; }
     .section { display: none !important; }
     .section.active { display: block !important; }
     .app { padding: 0; }
@@ -279,6 +283,7 @@
     </div>
     <div class="header-actions">
       <span id="user-email" style="font-size:12px;color:var(--text2);"></span>
+      <a class="btn-ghost" href="mechanics/" title="Planet Mechanics — cars, mechanics and work log"><i class="ti ti-tool"></i> Mechanics</a>
       <button class="btn-ghost" onclick="doLogout()" title="Log out"><i class="ti ti-logout"></i></button>
       <button class="btn-primary" onclick="openModal()"><i class="ti ti-plus"></i> New Part</button>
     </div>
@@ -319,12 +324,19 @@
       <select class="filter-select" onchange="renderAll()" id="filter-supplier-todas">
         <option value="">All suppliers</option>
       </select>
+      <select class="filter-select" onchange="renderAll()" id="filter-mech">
+        <option value="">Mechanic: all</option>
+        <option value="pending">Mechanic: not marked yet</option>
+        <option value="used">Mechanic: used</option>
+        <option value="refused">Mechanic: NOT used</option>
+      </select>
       <span class="filter-row-label"><i class="ti ti-calendar" style="font-size:14px"></i> Period:</span>
       <input type="date" class="date-input" id="date-from" onchange="renderAll()">
       <span class="filter-row-label">to</span>
       <input type="date" class="date-input" id="date-to" onchange="renderAll()">
       <button class="btn-ghost" onclick="clearDates('')">Clear</button>
     </div>
+    <div id="mech-alert"></div>
     <div id="list-todas"></div>
   </div>
 
@@ -424,6 +436,9 @@
     <div class="form-grid">
       <div class="form-group"><label>Part Name *</label><input type="text" id="f-nome" placeholder="E.g.: Oil filter"></div>
       <div class="form-group"><label>Part Code</label><input type="text" id="f-codigo" placeholder="E.g.: 15400-PLM-A02"></div>
+      <div class="form-group full"><label>Car in the shop (links this part to the mechanic's work order)</label>
+        <select id="f-carId" onchange="onCarPick()"></select>
+      </div>
       <div class="form-trio">
         <div class="form-group"><label>Vehicle</label><input type="text" id="f-carro" placeholder="E.g.: Honda Civic 2019"></div>
         <div class="form-group"><label>Supplier</label><input type="text" id="f-fornecedor" placeholder="E.g.: John Smith"></div>
@@ -487,6 +502,14 @@
     }, onError),
     saveNote: (n) => setDoc(doc(collection(dbFs, 'supplierNotes'), n.id), n),
     deleteNote: (id) => deleteDoc(doc(collection(dbFs, 'supplierNotes'), id)),
+    listenCars: (cb, onError) => onSnapshot(collection(dbFs, 'cars'), snap => {
+      cb(snap.docs.map(d => Object.assign({}, d.data(), { id: d.id })));
+    }, onError),
+    listenCarParts: (cb, onError) => onSnapshot(collection(dbFs, 'carParts'), snap => {
+      cb(snap.docs.map(d => Object.assign({}, d.data({ serverTimestamps: 'estimate' }), { id: d.id })));
+    }, onError),
+    saveCarPart: (id, data) => setDoc(doc(collection(dbFs, 'carParts'), id), data, { merge: true }),
+    deleteCarPart: (id) => deleteDoc(doc(collection(dbFs, 'carParts'), id)),
     listenNotes: (cb, onError) => onSnapshot(collection(dbFs, 'supplierNotes'), snap => {
       const arr = snap.docs.map(d => Object.assign({}, d.data(), { id: d.id }));
       cb(arr);
@@ -498,6 +521,9 @@
 const LS_KEY = 'iap_pecas_v2';
 let DB = [];
 let NOTES = [];
+let CARS = [];
+let CARPARTS = {};
+let carPartsLoaded = false;
 let editId = null;
 let currentTab = 'todas';
 let reportMonth = new Date().getMonth();
@@ -557,6 +583,10 @@ function initAuthFlow() {
       document.getElementById('user-email').textContent = user.email;
       window.IAP_FB.listenPecas(data => { DB = data; renderAll(); showSync(); }, showSyncError);
       window.IAP_FB.listenNotes(data => { NOTES = data; renderNotes(); }, () => {});
+      window.IAP_FB.listenCars(data => { CARS = data; renderAll(); }, e => console.warn('cars:', e.code));
+      window.IAP_FB.listenCarParts(data => {
+        CARPARTS = {}; data.forEach(cp => { CARPARTS[cp.id] = cp; }); carPartsLoaded = true; renderAll();
+      }, e => console.warn('carParts:', e.code));
     } else {
       overlay.classList.add('open');
       document.getElementById('user-email').textContent = '';
@@ -568,6 +598,32 @@ if (window.IAP_FB) { initAuthFlow(); } else { window.addEventListener('iapFbRead
 // Helpers
 function fmtVal(v) { return 'US$ ' + (v||0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 function fmtDate(d) { if(!d) return '—'; const [y,m,di] = d.split('-'); return m+'/'+di+'/'+y.slice(-2); }
+function escH(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function carLabel(c) { return (c.plate || ('VIN ' + String(c.vin || '').slice(-8))) + (c.vehicle ? ' · ' + c.vehicle : ''); }
+// What the mechanic recorded for this part in Planet Mechanics: '', 'pending', 'used' or 'refused'.
+function mechState(p) {
+  const cp = CARPARTS[p.id];
+  if (!cp) return '';
+  if (cp.usage === 'refused' || cp.usage === 'partial') return 'refused';
+  return cp.usage === 'used' ? 'used' : 'pending';
+}
+function mechBadge(p) {
+  const cp = CARPARTS[p.id];
+  if (!cp) return '';
+  const q = Number(cp.qtd) || 1, n = Number(cp.usedQty) || 0;
+  if (cp.usage === 'used') return '<span class="badge credited"><i class="ti ti-tool"></i> Mechanic: used</span>';
+  if (cp.usage === 'refused') return '<span class="badge refused"><i class="ti ti-tool"></i> Mechanic: NOT used</span>';
+  if (cp.usage === 'partial') return `<span class="badge refused"><i class="ti ti-tool"></i> Mechanic: used ${n} of ${q}</span>`;
+  return '<span class="badge pending"><i class="ti ti-tool"></i> Mechanic: not marked</span>';
+}
+function mechLine(p) {
+  const cp = CARPARTS[p.id];
+  if (!cp) return '';
+  const car = CARS.find(c => c.id === cp.carId);
+  const when = cp.decidedAt && cp.decidedAt.toDate ? cp.decidedAt.toDate().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+  const who = cp.usage && cp.usage !== 'pending' ? ` — marked by ${escH(cp.decidedByName || '—')}${when ? ' · ' + when : ''}${cp.note ? ' · “' + escH(cp.note) + '”' : ''}` : '';
+  return `<div class="mech-line"><i class="ti ti-link"></i><span>Linked to ${car ? escH(carLabel(car)) : 'a car that was removed'}${who}</span></div>`;
+}
 let sortDir = 'desc';
 function sortByDate(arr) {
   return [...arr].sort((a,b) => {
@@ -617,7 +673,7 @@ function cardHTML(p) {
         <div class="piece-name">${p.nome}</div>
         ${codeLine ? `<div class="piece-code">${codeLine}</div>` : ''}
       </div>
-      <div class="badges">${sb}</div>
+      <div class="badges">${mechBadge(p)}${sb}</div>
     </div>
     <div class="piece-meta">
       <div class="meta-item"><i class="ti ti-car" style="font-size:11px"></i> Vehicle<span>${p.carro||'—'}</span></div>
@@ -629,6 +685,7 @@ function cardHTML(p) {
     </div>
     <div class="piece-footer">
       ${p.obs ? `<div class="piece-obs"><i class="ti ti-note"></i><span>${p.obs}</span></div>` : ''}
+      ${mechLine(p)}
       <div>${creditToggle}</div>
       <div class="card-actions-right">
         <button class="icon-btn" onclick="openModal('${p.id}')" title="Edit"><i class="ti ti-edit"></i></button>
@@ -658,7 +715,13 @@ function renderTodas() {
   const fS = document.getElementById('filter-status')?.value||'';
   const fC = document.getElementById('filter-credito')?.value||'';
   const fSup = document.getElementById('filter-supplier-todas')?.value||'';
+  const fMech = document.getElementById('filter-mech')?.value||'';
+  const toReturn = DB.filter(p => mechState(p) === 'refused' && p.status !== 'devolvida').length;
+  document.getElementById('mech-alert').innerHTML = toReturn ? `<div class="mech-alert">
+      <span><i class="ti ti-alert-triangle"></i> ${toReturn} part${toReturn > 1 ? 's' : ''} marked NOT used by a mechanic ${toReturn > 1 ? 'are' : 'is'} waiting to be returned to the supplier</span>
+      <button class="btn-ghost" onclick="showToReturn()">Show</button></div>` : '';
   const filtered = DB.filter(p => {
+    if(fMech && mechState(p) !== fMech) return false;
     if(search && !`${p.nome} ${p.codigo} ${p.carro} ${p.fornecedor} ${p.invoice||''} ${p.obs||''}`.toLowerCase().includes(search)) return false;
     if(fS && p.status !== fS) return false;
     if(fC && p.credito !== fC) return false;
@@ -803,6 +866,35 @@ function renderAll() {
 }
 
 // Modal
+function fillCarSelect(selectedId) {
+  const sel = document.getElementById('f-carId');
+  const open = CARS.filter(c => c.status !== 'done' || c.id === selectedId)
+    .sort((a, b) => carLabel(a).localeCompare(carLabel(b)));
+  const st = { scheduled: 'scheduled', in_shop: 'in shop', done: 'done' };
+  sel.innerHTML = '<option value="">— Not linked to a car —</option>'
+    + open.map(c => `<option value="${escH(c.id)}">${escH(carLabel(c))} (${st[c.status] || ''})</option>`).join('');
+  sel.value = selectedId && open.some(c => c.id === selectedId) ? selectedId : '';
+}
+function onCarPick() {
+  const car = CARS.find(c => c.id === document.getElementById('f-carId').value);
+  const veh = document.getElementById('f-carro');
+  if (car && !veh.value.trim()) veh.value = [car.vehicle, car.plate].filter(Boolean).join(' · ');
+}
+function showToReturn() {
+  document.getElementById('filter-mech').value = 'refused';
+  document.getElementById('filter-status').value = 'utilizada';
+  renderAll();
+}
+// Mirror of the part without price or supplier, which is all a mechanic is allowed to read.
+function syncCarPart(p) {
+  const existing = CARPARTS[p.id];
+  if (!p.carId) return existing ? window.IAP_FB.deleteCarPart(p.id) : Promise.resolve();
+  const data = { carId: p.carId, pecaId: p.id, nome: p.nome, codigo: p.codigo, qtd: p.qtd, source: 'parts' };
+  if (carPartsLoaded && (!existing || existing.carId !== p.carId)) {
+    Object.assign(data, { usage: 'pending', usedQty: 0, decidedBy: null, decidedByName: '', decidedAt: null, device: '', note: '', createdAt: new Date().toISOString() });
+  }
+  return window.IAP_FB.saveCarPart(p.id, data);
+}
 function openModal(id) {
   editId = id || null;
   document.getElementById('modal-title').textContent = id ? 'Edit Part' : 'New Part';
@@ -816,7 +908,9 @@ function openModal(id) {
       document.getElementById('f-status').value = p.status||'utilizada';
       document.getElementById('f-credito').value = p.credito||'pendente';
     }
+    fillCarSelect(p ? p.carId : '');
   } else {
+    fillCarSelect('');
     ['nome','codigo','invoice','carro','fornecedor','obs'].forEach(k => document.getElementById('f-'+k).value = '');
     document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
     document.getElementById('f-valor').value = '';
@@ -844,6 +938,7 @@ function salvar() {
     nome, codigo: document.getElementById('f-codigo').value.trim(),
     invoice: document.getElementById('f-invoice').value.trim(),
     carro: document.getElementById('f-carro').value.trim(),
+    carId: document.getElementById('f-carId').value,
     fornecedor: document.getElementById('f-fornecedor').value.trim(),
     data: document.getElementById('f-data').value,
     valor: Math.round((parseFloat(document.getElementById('f-valor').value)||0) * 100) / 100,
@@ -854,11 +949,14 @@ function salvar() {
   };
   const dup = findDuplicate(p);
   if (dup && !confirm(`A part with the same name, code, vehicle and supplier is already registered ("${dup.nome}", ${dup.carro || 'no vehicle'}). Save anyway?`)) return;
-  window.IAP_FB.savePeca(p).then(()=>{ closeModal(); }).catch(e=>alert('Error saving: '+e.message));
+  window.IAP_FB.savePeca(p).then(()=>{
+    closeModal();
+    return syncCarPart(p).catch(e=>alert('The part was saved, but linking it to the car failed: '+e.message));
+  }).catch(e=>alert('Error saving: '+e.message));
 }
 function deletar(id) {
   if(!confirm('Remove this part?')) return;
-  window.IAP_FB.deletePeca(id).catch(e=>alert('Error removing: '+e.message));
+  window.IAP_FB.deletePeca(id).then(()=> CARPARTS[id] ? window.IAP_FB.deleteCarPart(id) : null).catch(e=>alert('Error removing: '+e.message));
 }
 function setCredito(id, novo) {
   const p = DB.find(x=>x.id===id);

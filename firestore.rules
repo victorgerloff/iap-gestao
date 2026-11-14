@@ -1,0 +1,111 @@
+// Firestore security rules for Planet Parts + Planet Mechanics.
+//
+// HOW TO APPLY: Firebase console > Firestore Database > Rules, paste this whole
+// file, replace REPLACE-WITH-ADMIN-EMAIL below with the email(s) used to sign in
+// to Planet Parts, then Publish. Anyone not in that list and not in the "team"
+// collection is locked out of everything.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+    function isAdmin() {
+      return signedIn() && request.auth.token.email in [
+        'REPLACE-WITH-ADMIN-EMAIL'
+      ];
+    }
+    function teamDoc() {
+      return /databases/$(database)/documents/team/$(request.auth.token.email);
+    }
+    function isMechanic() {
+      return signedIn() && exists(teamDoc()) && get(teamDoc()).data.active == true;
+    }
+    function carData(carId) {
+      return get(/databases/$(database)/documents/cars/$(carId)).data;
+    }
+    // A mechanic only gets at a car's parts and work log after signing for it.
+    function signedOn(carId) {
+      return isMechanic() && request.auth.uid in carData(carId).mechanicIds;
+    }
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // Prices, suppliers, returns and credits: administrator only.
+    match /pecas/{id} { allow read, write: if isAdmin(); }
+    match /supplierNotes/{id} { allow read, write: if isAdmin(); }
+    match /meta/{id} { allow read, write: if isAdmin(); }
+
+    // Mechanic accounts, keyed by lowercase email. Created by the administrator.
+    match /team/{email} {
+      allow read: if isAdmin() || (signedIn() && request.auth.token.email == email);
+      allow write: if isAdmin();
+    }
+
+    match /cars/{carId} {
+      allow read: if isAdmin() || isMechanic();
+      allow create: if isAdmin() || (isMechanic()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.mechanicIds == []
+        && request.resource.data.signatures == {}
+        && request.resource.data.status in ['scheduled', 'in_shop']
+        && (request.resource.data.plate != '' || request.resource.data.vin != ''));
+      allow update: if isAdmin() || (isMechanic() && (isSigning() || isStatusChange()));
+      allow delete: if isAdmin();
+
+      // Signing adds exactly the caller, stamped with server time, and never
+      // touches anybody else's signature.
+      function isSigning() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return !(request.auth.uid in before.mechanicIds)
+          && after.mechanicIds == before.mechanicIds.concat([request.auth.uid])
+          && after.signatures.diff(before.signatures).affectedKeys().hasOnly([request.auth.uid])
+          && after.signatures[request.auth.uid].email == request.auth.token.email
+          && after.signatures[request.auth.uid].ts == request.time
+          && changedKeys().hasOnly(['mechanicIds', 'signatures', 'status', 'arrivedAt', 'updatedAt'])
+          && (after.status == before.status
+              || (before.status == 'scheduled' && after.status == 'in_shop'));
+      }
+      function isStatusChange() {
+        return request.auth.uid in resource.data.mechanicIds
+          && changedKeys().hasOnly(['status', 'arrivedAt', 'doneAt', 'updatedAt'])
+          && request.resource.data.status in ['in_shop', 'done'];
+      }
+    }
+
+    // Work log: append-only. Each mechanic reads only their own entries.
+    match /carLogs/{id} {
+      allow read: if isAdmin() || (isMechanic() && resource.data.uid == request.auth.uid);
+      allow create: if (isAdmin() || signedOn(request.resource.data.carId))
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.ts == request.time
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 5000;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // Parts issued to a car, without price or supplier. Mechanics may only
+    // record what was used / not used, under their own name and server time.
+    match /carParts/{id} {
+      allow read: if isAdmin() || signedOn(resource.data.carId);
+      allow create: if isAdmin() || (signedOn(request.resource.data.carId)
+        && request.resource.data.source == 'mechanic'
+        && request.resource.data.pecaId == null
+        && request.resource.data.addedBy == request.auth.uid
+        && request.resource.data.decidedBy == request.auth.uid
+        && request.resource.data.decidedAt == request.time);
+      allow update: if isAdmin() || (signedOn(resource.data.carId)
+        && changedKeys().hasOnly(['usage', 'usedQty', 'decidedBy', 'decidedByName', 'decidedAt', 'device', 'note'])
+        && request.resource.data.usage in ['used', 'partial', 'refused']
+        && request.resource.data.decidedBy == request.auth.uid
+        && request.resource.data.decidedAt == request.time);
+      allow delete: if isAdmin();
+    }
+  }
+}

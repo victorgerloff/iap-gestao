@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Planet Mechanics</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="../assets/favicon-64.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png?v=2">
+<meta name="theme-color" content="#1a3a5c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mechanics">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  :root {
+    --surface: #ffffff; --surface2: #f0efe9;
+    --border: rgba(0,0,0,0.10); --border2: rgba(0,0,0,0.18);
+    --text: #1a1a18; --text2: #6b6b65; --text3: #9b9b93;
+    --navy: #1a3a5c; --navy2: #0f2540;
+    --green: #1D9E75; --green-bg: #E1F5EE; --green-text: #0F6E56;
+    --amber: #BA7517; --amber-bg: #FAEEDA; --amber-text: #854F0B;
+    --red: #A32D2D; --red-bg: #FCEBEB; --red-text: #791F1F;
+    --blue-bg: #E6F1FB; --blue-text: #185FA5;
+    --radius: 10px; --radius-lg: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #1c1d1a; --surface2: #252622;
+      --border: rgba(255,255,255,0.09); --border2: rgba(255,255,255,0.16);
+      --text: #eeeee8; --text2: #9a9a92; --text3: #6a6a62;
+      --green-bg: #04342C; --green-text: #9FE1CB;
+      --amber-bg: #412402; --amber-text: #FAC775;
+      --red-bg: #501313; --red-text: #F7C1C1;
+      --blue-bg: #042C53; --blue-text: #B5D4F4;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; background: #000; color: var(--text); min-height: 100vh; }
+  body::before { content: ''; position: fixed; inset: -30px; background: url('../assets/logo-planet.jpg') center / cover; filter: blur(35px) brightness(0.35); opacity: 0.6; z-index: -1; }
+  button { font-family: inherit; }
+
+  .app { max-width: 860px; margin: 0 auto; padding: 1rem 1rem calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .hdr { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 1rem; }
+  .logo { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .logo-icon { width: 48px; height: 48px; border-radius: 12px; overflow: hidden; flex-shrink: 0; background: var(--navy); }
+  .logo-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .logo-text { font-size: 19px; font-weight: 600; color: #fff; }
+  .logo-sub { font-size: 13px; color: #b9b9b2; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hdr-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .hdr .btn-ghost { color: #d5d5cf; border-color: rgba(255,255,255,0.3); text-decoration: none; }
+
+  .nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; background: var(--surface); border-top: 0.5px solid var(--border2); padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px)); }
+  .nav button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; border: none; background: transparent; color: var(--text2); font-size: 12px; font-weight: 600; border-radius: var(--radius); cursor: pointer; }
+  .nav button i { font-size: 22px; }
+  .nav button.on { color: #fff; background: var(--navy); }
+  @media (min-width: 720px) {
+    .app { padding-bottom: 3rem; }
+    .nav { position: static; border: 0.5px solid var(--border); border-radius: var(--radius); margin-bottom: 1rem; padding: 5px; gap: 4px; }
+    .nav button { flex-direction: row; justify-content: center; gap: 8px; font-size: 14px; padding: 10px; }
+    .nav button i { font-size: 18px; }
+  }
+
+  .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 50px; padding: 12px 16px; border-radius: var(--radius); border: none; background: var(--navy); color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .btn:active { background: var(--navy2); }
+  .btn.sec { background: var(--surface2); color: var(--text); border: 0.5px solid var(--border2); }
+  .btn.good { background: var(--green); }
+  .btn.bad { background: var(--red); }
+  .btn.slim { min-height: 42px; font-size: 14px; padding: 8px 12px; }
+  .btn-ghost { background: transparent; color: var(--text2); border: 0.5px solid var(--border2); padding: 8px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row > * { flex: 1; }
+  body.busy .btn, body.busy .btn-ghost { opacity: 0.55; pointer-events: none; }
+
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 10px; }
+  .card h3 { font-size: 12px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .sect { font-size: 12px; font-weight: 700; color: #d5d5cf; text-transform: uppercase; letter-spacing: 0.6px; margin: 18px 2px 8px; display: flex; align-items: center; gap: 6px; }
+  .sect .n { background: rgba(255,255,255,0.18); color: #fff; border-radius: 20px; padding: 1px 8px; font-size: 11px; }
+  .hint { font-size: 13px; color: var(--text2); line-height: 1.45; }
+  .empty { text-align: center; padding: 2.2rem 1rem; color: var(--text3); font-size: 14px; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 10px; }
+  .empty i { font-size: 34px; display: block; margin-bottom: 8px; opacity: 0.5; }
+
+  .car { display: block; width: 100%; text-align: left; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 10px; cursor: pointer; color: inherit; font-size: inherit; }
+  .car:active { border-color: var(--navy); }
+  .car-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .plate { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 17px; font-weight: 700; letter-spacing: 1.5px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; padding: 3px 10px; }
+  .plate.big { font-size: 24px; padding: 6px 14px; }
+  .car-veh { font-size: 15px; font-weight: 600; margin-top: 8px; }
+  .car-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--text2); margin-top: 6px; }
+  .car-meta span { display: inline-flex; align-items: center; gap: 4px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .chip.amber { background: var(--amber-bg); color: var(--amber-text); }
+  .chip.blue { background: var(--blue-bg); color: var(--blue-text); }
+  .chip.green { background: var(--green-bg); color: var(--green-text); }
+  .chip.red { background: var(--red-bg); color: var(--red-text); }
+  .chip.grey { background: var(--surface2); color: var(--text2); }
+
+  label { display: block; font-size: 13px; color: var(--text2); font-weight: 600; margin-bottom: 5px; }
+  .field { margin-bottom: 12px; }
+  input, select, textarea { width: 100%; font: inherit; font-size: 16px; padding: 12px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--surface); color: var(--text); }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(26,58,92,0.25); }
+  textarea { resize: vertical; min-height: 96px; line-height: 1.4; }
+  .mono-in { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; letter-spacing: 1px; text-transform: uppercase; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 480px) { .two { grid-template-columns: 1fr; gap: 0; } }
+  .seg { display: flex; border: 0.5px solid var(--border2); border-radius: var(--radius); overflow: hidden; }
+  .seg button { flex: 1; padding: 12px 8px; border: none; background: var(--surface2); color: var(--text2); font-size: 15px; font-weight: 600; cursor: pointer; }
+  .seg button + button { border-left: 0.5px solid var(--border2); }
+  .seg button.on { background: var(--navy); color: #fff; }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .filters input, .filters select { flex: 1; min-width: 150px; padding: 10px 12px; font-size: 15px; }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .pills button { padding: 7px 13px; border-radius: 20px; border: 0.5px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.08); color: #e4e4de; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .pills button.on { background: #fff; color: #111; border-color: #fff; }
+
+  .rows > div { display: flex; justify-content: space-between; gap: 14px; padding: 8px 0; border-bottom: 0.5px solid var(--border); font-size: 14px; }
+  .rows > div:last-child { border-bottom: none; }
+  .rows .k { color: var(--text2); flex-shrink: 0; }
+  .rows .v { text-align: right; font-weight: 500; word-break: break-word; }
+  .who { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--border); font-size: 14px; }
+  .who:last-of-type { border-bottom: none; }
+  .who small, .log small, .part small { display: block; font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+  .log { padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .log:last-child { border-bottom: none; padding-bottom: 0; }
+  .log-head { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--text2); font-weight: 600; }
+  .log-text { font-size: 15px; line-height: 1.45; margin-top: 4px; white-space: pre-wrap; word-break: break-word; }
+  .log.auto .log-text { font-size: 13px; color: var(--text2); }
+  .log a { color: var(--blue-text); font-weight: 700; text-decoration: none; cursor: pointer; }
+
+  .part { padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+  .part:last-of-type { border-bottom: none; }
+  .part-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .part-name { font-size: 15px; font-weight: 600; }
+  .part .btn-row { margin-top: 10px; }
+  .part .btn-row.three .btn { font-size: 13px; padding: 8px 4px; white-space: nowrap; }
+  .part .btn.on-good { background: var(--green); color: #fff; border-color: var(--green); }
+  .part .btn.on-bad { background: var(--red); color: #fff; border-color: var(--red); }
+  .part .btn.on-mid { background: var(--blue-text); color: #fff; border-color: var(--blue-text); }
+  .back { background: none; border: none; color: #e4e4de; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; padding: 8px 4px; margin-bottom: 6px; cursor: pointer; }
+  .detail-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+  .stat b { display: block; font-size: 22px; }
+  .stat span { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
+  .modal { background: var(--surface); width: 100%; max-width: 520px; border-radius: 18px 18px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom, 0px)); max-height: 92vh; overflow-y: auto; }
+  @media (min-width: 720px) { .overlay { align-items: center; padding: 1rem; } .modal { border-radius: 18px; } }
+  .modal h2 { font-size: 18px; margin-bottom: 12px; }
+  .oath { background: var(--surface2); border-left: 3px solid var(--navy); border-radius: 6px; padding: 12px 14px; font-size: 14px; line-height: 1.5; margin-bottom: 14px; }
+  .err { color: var(--red); font-size: 13px; min-height: 18px; margin: 4px 0 8px; }
+  .center { max-width: 380px; margin: 12vh auto 0; }
+  #toast { position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top, 0px)); transform: translateX(-50%) translateY(-20px); background: #111; color: #fff; border: 1px solid rgba(255,255,255,0.25); padding: 12px 18px; border-radius: 24px; font-size: 14px; font-weight: 600; opacity: 0; pointer-events: none; transition: all 0.2s; z-index: 300; max-width: 90vw; text-align: center; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="app" id="app"><div class="empty" style="margin-top:20vh">Loading…</div></div>
+<div id="modal-root"></div>
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, EmailAuthProvider, reauthenticateWithCredential, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, serverTimestamp, arrayUnion, arrayRemove, deleteField, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDO_SHL71igs8O5ODCQnwxhMXVnQ86UBvc",
+  authDomain: "gestao-de-pecas-international.firebaseapp.com",
+  projectId: "gestao-de-pecas-international",
+  storageBucket: "gestao-de-pecas-international.firebasestorage.app",
+  messagingSenderId: "531733990676",
+  appId: "1:531733990676:web:9b5d3b25f7a233bd210601"
+};
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
+
+const appEl = document.getElementById('app');
+const modalEl = document.getElementById('modal-root');
+const S = {
+  phase: 'loading', user: null, role: null, me: null,
+  tab: 'mine', view: null, carId: null, modal: null, f: {}, dirty: false,
+  openCars: new Map(), myCars: new Map(), cars: new Map(),
+  logs: [], parts: [], pecas: new Map(), team: [], carWatchKey: null, watchRetries: 0
+};
+let baseSubs = [], carSubs = [];
+
+// ── helpers ──
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fv = (k, d = '') => (S.f[k] ?? d);
+const isAdmin = () => S.role === 'admin';
+const myName = () => (S.me && S.me.name) || 'Admin';
+const toDate = (v) => (!v ? null : (typeof v.toDate === 'function' ? v.toDate() : new Date(v)));
+function fmtDT(v) {
+  const d = toDate(v);
+  if (!d || isNaN(d)) return '—';
+  const opt = { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+  if (d.getFullYear() !== new Date().getFullYear()) opt.year = 'numeric';
+  return d.toLocaleString('en-US', opt);
+}
+function todayStr(offset = 0) {
+  const d = new Date(); d.setDate(d.getDate() + offset);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function fmtDay(s) {
+  if (!s) return '';
+  if (s === todayStr()) return 'Today';
+  if (s === todayStr(1)) return 'Tomorrow';
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+function deviceLabel() {
+  let id = '';
+  try {
+    id = localStorage.getItem('pm_device_id') || '';
+    if (!id) { id = Math.random().toString(36).slice(2, 8).toUpperCase(); localStorage.setItem('pm_device_id', id); }
+  } catch (e) { id = 'TEMP'; }
+  const ua = navigator.userAgent;
+  let kind = 'Device';
+  if (/iPhone/.test(ua)) kind = 'iPhone';
+  else if (/iPad/.test(ua)) kind = 'iPad';
+  else if (/Android/.test(ua)) { const m = ua.match(/Android [\d.]+; ([^;)]+)/); kind = 'Android' + (m && m[1].trim() !== 'K' ? ' ' + m[1].trim() : ''); }
+  else if (/Windows/.test(ua)) kind = 'Windows PC';
+  else if (/Macintosh/.test(ua)) kind = 'Mac';
+  return `${kind} #${id}`;
+}
+let toastT;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2800);
+}
+const carTitle = (c) => c.plate || ('VIN ' + String(c.vin || '').slice(-8));
+const signers = (c) => (c.mechanicIds || []).map((u) => ({ uid: u, ...((c.signatures || {})[u] || {}) }));
+const iSigned = (c) => !!c && (c.mechanicIds || []).includes(S.user.uid);
+const logTime = (l) => toDate(l.ts) || toDate(l.at) || new Date(0);
+const logsOf = (carId) => S.logs.filter((l) => l.carId === carId).sort((a, b) => logTime(b) - logTime(a));
+const partsOf = (carId) => S.parts.filter((p) => p.carId === carId).sort((a, b) => String(a.nome).localeCompare(String(b.nome)));
+const STATUS = { scheduled: ['Scheduled', 'amber'], in_shop: ['In shop', 'blue'], done: ['Done', 'green'] };
+const statusChip = (c) => `<span class="chip ${STATUS[c.status]?.[1] || 'grey'}">${STATUS[c.status]?.[0] || esc(c.status)}</span>`;
+function usageChip(p) {
+  const q = Number(p.qtd) || 1, n = Number(p.usedQty) || 0;
+  if (p.usage === 'used') return '<span class="chip green"><i class="ti ti-check"></i> Used</span>';
+  if (p.usage === 'refused') return '<span class="chip red"><i class="ti ti-arrow-back-up"></i> Not used · return</span>';
+  if (p.usage === 'partial') return `<span class="chip blue">Used ${n} of ${q} · return ${q - n}</span>`;
+  return '<span class="chip amber"><i class="ti ti-clock"></i> Not marked yet</span>';
+}
+
+// ── rendering ──
+function render(force) {
+  const ae = document.activeElement;
+  // A snapshot arriving mid-typing must not replace the field under the keyboard.
+  if (!force && ae && appEl.contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) { S.dirty = true; return; }
+  S.dirty = false;
+  appEl.innerHTML = viewHTML();
+}
+function renderRegions() {
+  appEl.querySelectorAll('[data-region]').forEach((el) => { el.innerHTML = REGIONS[el.dataset.region](); });
+}
+function renderModal() { modalEl.innerHTML = S.modal ? `<div class="overlay" data-a="overlay"><div class="modal">${MODALS[S.modal.type](S.modal)}</div></div>` : ''; }
+function openModal(m) { S.modal = m; renderModal(); const first = modalEl.querySelector('input,textarea'); if (first) first.focus(); }
+function closeModal() { S.modal = null; renderModal(); }
+
+function viewHTML() {
+  if (S.phase === 'loading') return '<div class="empty" style="margin-top:20vh">Loading…</div>';
+  if (S.phase === 'login') return loginHTML();
+  if (S.phase === 'denied') return `<div class="card center"><h3><i class="ti ti-lock"></i> No access</h3><p class="hint" style="margin-bottom:14px">${esc(S.user?.email)} is not authorized for Planet Mechanics. Ask the administrator to add you to the team.</p><button class="btn sec" data-a="logout">Sign out</button></div>`;
+  if (S.phase === 'offline') return `<div class="card center"><h3><i class="ti ti-wifi-off"></i> No connection</h3><p class="hint" style="margin-bottom:14px">Could not reach the server. Check the internet and try again.</p><button class="btn" data-a="retry">Try again</button></div>`;
+  let body;
+  if (S.carId) body = carDetailHTML();
+  else if (S.view === 'register') body = registerHTML();
+  else body = TABS[S.tab]();
+  return headerHTML() + navHTML() + body;
+}
+function loginHTML() {
+  return `<div class="center">
+    <div class="logo" style="justify-content:center;margin-bottom:18px"><div class="logo-icon"><img src="../assets/logo-planet.jpg" alt=""></div><div><div class="logo-text">Planet Mechanics</div><div class="logo-sub">Planet Automotive Group</div></div></div>
+    <div class="card">
+      <div class="field"><label>Email</label><input type="email" data-m="email" data-enter="login" autocomplete="username" autocapitalize="none" value="${esc(fv('email'))}"></div>
+      <div class="field"><label>Password</label><input type="password" data-m="pw" data-enter="login" autocomplete="current-password" value="${esc(fv('pw'))}"></div>
+      <div class="err">${esc(fv('loginErr'))}</div>
+      <button class="btn" data-a="login"><i class="ti ti-login"></i> Sign in</button>
+      <p class="hint" style="margin-top:12px;text-align:center">Accounts are created by the administrator.</p>
+    </div></div>`;
+}
+function headerHTML() {
+  return `<div class="hdr">
+    <div class="logo"><div class="logo-icon"><img src="../assets/logo-planet.jpg" alt=""></div>
+      <div style="min-width:0"><div class="logo-text">Planet Mechanics</div><div class="logo-sub">${esc(myName())} · ${isAdmin() ? 'Administrator' : 'Mechanic'}</div></div></div>
+    <div class="hdr-actions">${isAdmin() ? '<a class="btn-ghost" href="../"><i class="ti ti-package"></i> Parts</a>' : ''}
+      <button class="btn-ghost" data-a="logout" title="Sign out"><i class="ti ti-logout"></i></button></div>
+  </div>`;
+}
+function navHTML() {
+  const items = isAdmin()
+    ? [['cars', 'ti-car', 'Cars'], ['activity', 'ti-list-details', 'Activity'], ['parts', 'ti-package', 'Parts'], ['team', 'ti-users', 'Team']]
+    : [['mine', 'ti-tool', 'My cars'], ['agenda', 'ti-calendar-event', 'Shop & agenda'], ['register', 'ti-plus', 'New car']];
+  const cur = S.carId ? null : (S.view === 'register' ? 'register' : S.tab);
+  return `<nav class="nav">${items.map(([t, ic, l]) => `<button class="${cur === t ? 'on' : ''}" data-a="tab" data-t="${t}"><i class="ti ${ic}"></i>${l}</button>`).join('')}</nav>`;
+}
+function carCard(c) {
+  const names = signers(c).map((s) => s.name).filter(Boolean);
+  const when = c.status === 'scheduled' && c.scheduledFor
+    ? `<span style="${c.scheduledFor < todayStr() ? 'color:var(--red);font-weight:600' : ''}"><i class="ti ti-calendar"></i> ${c.scheduledFor < todayStr() ? 'Was due ' : ''}${esc(fmtDay(c.scheduledFor))}</span>` : '';
+  return `<button class="car" data-a="openCar" data-id="${esc(c.id)}">
+    <div class="car-top"><span class="plate">${esc(carTitle(c))}</span>${statusChip(c)}</div>
+    ${c.vehicle ? `<div class="car-veh">${esc(c.vehicle)}</div>` : ''}
+    <div class="car-meta">${when}
+      <span><i class="ti ti-user"></i> ${names.length ? esc(names.join(', ')) : '<b style="color:var(--amber)">No mechanic yet</b>'}</span>
+      ${c.customer ? `<span><i class="ti ti-id"></i> ${esc(c.customer)}</span>` : ''}</div>
+  </button>`;
+}
+const listOr = (arr, icon, msg) => (arr.length ? arr.map(carCard).join('') : `<div class="empty"><i class="ti ${icon}"></i>${msg}</div>`);
+const carMatches = (c, q) => !q || `${c.plate} ${c.vin} ${c.vehicle} ${c.customer} ${c.ro || ''}`.toLowerCase().includes(q);
+const byNewest = (a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+const bySchedule = (a, b) => String(a.scheduledFor || '9999').localeCompare(String(b.scheduledFor || '9999'));
+
+const TABS = {
+  mine() {
+    const mine = [...S.cars.values()].filter(iSigned);
+    const open = mine.filter((c) => c.status !== 'done').sort(byNewest);
+    const done = mine.filter((c) => c.status === 'done').sort((a, b) => String(b.doneAt || '').localeCompare(String(a.doneAt || ''))).slice(0, 20);
+    return `<div class="sect">Cars I am responsible for <span class="n">${open.length}</span></div>
+      ${listOr(open, 'ti-tool', 'You have not signed for any car yet.<br>Open <b>Shop &amp; agenda</b> to pick one, or register a <b>New car</b>.')}
+      ${done.length ? `<div class="sect">Finished <span class="n">${done.length}</span></div>${done.map(carCard).join('')}` : ''}`;
+  },
+  agenda() {
+    return `<div class="filters"><input type="search" placeholder="Search plate, VIN or vehicle…" data-m="q_agenda" data-live value="${esc(fv('q_agenda'))}"></div>
+      <div data-region="agenda">${REGIONS.agenda()}</div>`;
+  },
+  cars() {
+    const all = [...S.cars.values()];
+    const toReturn = S.parts.filter(needsReturn).length;
+    return `<div class="stats">
+        <div class="stat"><b>${all.filter((c) => c.status === 'in_shop').length}</b><span>In shop</span></div>
+        <div class="stat"><b>${all.filter((c) => c.status === 'scheduled').length}</b><span>Scheduled</span></div>
+        <div class="stat"><b style="color:var(--amber)">${all.filter((c) => c.status === 'in_shop' && !(c.mechanicIds || []).length).length}</b><span>No mechanic</span></div>
+        <div class="stat"><b style="color:var(--red)">${toReturn}</b><span>Parts to return</span></div>
+      </div>
+      <button class="btn" data-a="tab" data-t="register" style="margin-bottom:12px"><i class="ti ti-plus"></i> Register car</button>
+      <div class="filters"><input type="search" placeholder="Search plate, VIN, vehicle, customer…" data-m="q_cars" data-live value="${esc(fv('q_cars'))}">
+        <select data-m="f_mech">${mechOptions(fv('f_mech'))}</select></div>
+      <div class="pills">${[['open', 'Open'], ['scheduled', 'Scheduled'], ['in_shop', 'In shop'], ['done', 'Done'], ['all', 'All']].map(([v, l]) => `<button class="${fv('f_status', 'open') === v ? 'on' : ''}" data-a="setF" data-k="f_status" data-v="${v}">${l}</button>`).join('')}</div>
+      <div data-region="adminCars">${REGIONS.adminCars()}</div>`;
+  },
+  activity() {
+    return `<div class="filters"><input type="search" placeholder="Search text, plate…" data-m="q_act" data-live value="${esc(fv('q_act'))}">
+        <select data-m="f_actMech">${mechOptions(fv('f_actMech'))}</select></div>
+      <div class="pills">${[['1', 'Today'], ['7', '7 days'], ['30', '30 days'], ['0', 'All']].map(([v, l]) => `<button class="${fv('f_actDays', '7') === v ? 'on' : ''}" data-a="setF" data-k="f_actDays" data-v="${v}">${l}</button>`).join('')}</div>
+      <div data-region="activity">${REGIONS.activity()}</div>`;
+  },
+  parts() {
+    const n = (f) => S.parts.filter(f).length;
+    const tabs = [['toreturn', `To return (${n(needsReturn)})`], ['pending', `Not marked yet (${n((p) => !p.usage || p.usage === 'pending')})`], ['used', 'Used'], ['returned', 'Returned'], ['all', 'All']];
+    return `<div class="filters"><input type="search" placeholder="Search part, code, plate, supplier…" data-m="q_parts" data-live value="${esc(fv('q_parts'))}"></div>
+      <div class="pills">${tabs.map(([v, l]) => `<button class="${fv('f_parts', 'toreturn') === v ? 'on' : ''}" data-a="setF" data-k="f_parts" data-v="${v}">${l}</button>`).join('')}</div>
+      <div data-region="adminParts">${REGIONS.adminParts()}</div>`;
+  },
+  team() {
+    const rows = [...S.team].sort((a, b) => String(a.name).localeCompare(String(b.name))).map((m) => {
+      const open = [...S.cars.values()].filter((c) => c.status !== 'done' && signers(c).some((s) => s.email === m.email)).length;
+      return `<div class="who"><div><b>${esc(m.name)}</b> ${m.active ? '' : '<span class="chip grey">Inactive</span>'}<small>${esc(m.email)} · ${open} open car${open === 1 ? '' : 's'}</small></div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn-ghost" data-a="resetPw" data-email="${esc(m.email)}" title="Send password reset email"><i class="ti ti-key"></i></button>
+          <button class="btn-ghost" data-a="toggleMech" data-email="${esc(m.email)}">${m.active ? 'Deactivate' : 'Activate'}</button></div></div>`;
+    }).join('');
+    return `<button class="btn" data-a="addMechAsk" style="margin-bottom:12px"><i class="ti ti-user-plus"></i> Add mechanic</button>
+      <div class="card"><h3><i class="ti ti-users"></i> Mechanics</h3>${rows || '<p class="hint">No mechanics yet. Add one so they can sign in on their phone.</p>'}</div>
+      <p class="hint" style="color:#b9b9b2;padding:0 4px">Each mechanic signs in with their own email and password. They see the car list and their own work only — never another mechanic's entries, prices or suppliers.</p>`;
+  }
+};
+function mechOptions(sel) {
+  return '<option value="">All mechanics</option>' + S.team.map((m) => `<option value="${esc(m.email)}" ${sel === m.email ? 'selected' : ''}>${esc(m.name)}</option>`).join('');
+}
+const pecaOf = (p) => (p.pecaId ? S.pecas.get(p.pecaId) : null);
+const isReturned = (p) => pecaOf(p)?.status === 'devolvida';
+const needsReturn = (p) => (p.usage === 'refused' || p.usage === 'partial') && p.source !== 'mechanic' && !isReturned(p);
+
+const REGIONS = {
+  agenda() {
+    const q = fv('q_agenda').trim().toLowerCase();
+    const open = [...S.cars.values()].filter((c) => c.status !== 'done' && carMatches(c, q));
+    const free = open.filter((c) => c.status === 'in_shop' && !(c.mechanicIds || []).length).sort(byNewest);
+    const shop = open.filter((c) => c.status === 'in_shop' && (c.mechanicIds || []).length).sort(byNewest);
+    const sched = open.filter((c) => c.status === 'scheduled').sort(bySchedule);
+    if (!open.length) return `<div class="empty"><i class="ti ti-calendar-off"></i>${q ? 'No car matches your search.' : 'No cars in the shop or scheduled.'}</div>`;
+    return (free.length ? `<div class="sect">In shop · needs a mechanic <span class="n">${free.length}</span></div>${free.map(carCard).join('')}` : '')
+      + (shop.length ? `<div class="sect">In shop <span class="n">${shop.length}</span></div>${shop.map(carCard).join('')}` : '')
+      + (sched.length ? `<div class="sect">Scheduled <span class="n">${sched.length}</span></div>${sched.map(carCard).join('')}` : '');
+  },
+  adminCars() {
+    const q = fv('q_cars').trim().toLowerCase(), st = fv('f_status', 'open'), mech = fv('f_mech');
+    const arr = [...S.cars.values()].filter((c) => carMatches(c, q)
+      && (st === 'all' || (st === 'open' ? c.status !== 'done' : c.status === st))
+      && (!mech || signers(c).some((s) => s.email === mech)))
+      .sort((a, b) => (a.status === 'scheduled' && b.status === 'scheduled' ? bySchedule(a, b) : byNewest(a, b)));
+    return listOr(arr, 'ti-car-off', 'No cars match these filters.');
+  },
+  activity() {
+    const q = fv('q_act').trim().toLowerCase(), mech = fv('f_actMech'), days = Number(fv('f_actDays', '7'));
+    const since = days ? new Date(new Date().setHours(0, 0, 0, 0) - (days - 1) * 864e5) : null;
+    const arr = S.logs.filter((l) => {
+      const c = S.cars.get(l.carId);
+      if (mech && l.email !== mech) return false;
+      if (since && logTime(l) < since) return false;
+      return !q || `${l.text} ${l.name} ${c ? c.plate + ' ' + c.vin + ' ' + c.vehicle : ''}`.toLowerCase().includes(q);
+    }).sort((a, b) => logTime(b) - logTime(a));
+    if (!arr.length) return '<div class="empty"><i class="ti ti-list-search"></i>No activity for these filters.</div>';
+    const shown = arr.slice(0, 300);
+    return `<div class="card">${shown.map((l) => logHTML(l, true)).join('')}</div>${arr.length > shown.length ? `<p class="hint" style="color:#b9b9b2;text-align:center">Showing the latest 300 of ${arr.length}. Narrow the filters to see older entries.</p>` : ''}`;
+  },
+  adminParts() {
+    const q = fv('q_parts').trim().toLowerCase(), f = fv('f_parts', 'toreturn');
+    const arr = S.parts.filter((p) => {
+      const c = S.cars.get(p.carId), pe = pecaOf(p);
+      if (q && !`${p.nome} ${p.codigo} ${c ? c.plate + ' ' + c.vehicle : ''} ${pe ? pe.fornecedor + ' ' + (pe.invoice || '') : ''}`.toLowerCase().includes(q)) return false;
+      if (f === 'toreturn') return needsReturn(p);
+      if (f === 'pending') return !p.usage || p.usage === 'pending';
+      if (f === 'used') return p.usage === 'used' || p.usage === 'partial';
+      if (f === 'returned') return isReturned(p);
+      return true;
+    }).sort((a, b) => (toDate(b.decidedAt) || 0) - (toDate(a.decidedAt) || 0));
+    if (!arr.length) return '<div class="empty"><i class="ti ti-package-off"></i>Nothing here.</div>';
+    return `<div class="card">${arr.map((p) => partHTML(p, true, false)).join('')}</div>`;
+  }
+};
+
+function logHTML(l, showCar) {
+  const c = showCar ? S.cars.get(l.carId) : null;
+  const icon = { sign: 'ti-signature', status: 'ti-flag', part: 'ti-package', note: 'ti-note' }[l.kind] || 'ti-tool';
+  return `<div class="log ${l.kind && l.kind !== 'work' && l.kind !== 'note' ? 'auto' : ''}">
+    <div class="log-head"><span><i class="ti ${icon}"></i> ${isAdmin() ? esc(l.name || l.email) + ' · ' : ''}${esc(fmtDT(logTime(l)))}</span>
+      ${showCar ? `<a data-a="openCar" data-id="${esc(l.carId)}">${c ? esc(carTitle(c)) : 'car removed'}</a>` : ''}</div>
+    <div class="log-text">${esc(l.text)}</div>
+    <small><i class="ti ti-device-mobile"></i> ${esc(l.device || '—')}${showCar && c && c.vehicle ? ' · ' + esc(c.vehicle) : ''}</small>
+  </div>`;
+}
+function partHTML(p, adminList, canMark) {
+  const q = Number(p.qtd) || 1, pe = pecaOf(p), c = S.cars.get(p.carId);
+  const on = (u, cls) => (p.usage === u ? cls : 'sec');
+  const buttons = !canMark ? '' : (q > 1
+    ? `<div class="btn-row three">
+      <button class="btn slim ${on('used', 'on-good')}" data-a="partUsed" data-id="${esc(p.id)}">Used all ${q}</button>
+      <button class="btn slim ${on('partial', 'on-mid')}" data-a="partAsk" data-id="${esc(p.id)}" data-u="partial">Used some</button>
+      <button class="btn slim ${on('refused', 'on-bad')}" data-a="partAsk" data-id="${esc(p.id)}" data-u="refused">Not used</button></div>`
+    : `<div class="btn-row">
+      <button class="btn slim ${on('used', 'on-good')}" data-a="partUsed" data-id="${esc(p.id)}"><i class="ti ti-check"></i> Used</button>
+      <button class="btn slim ${on('refused', 'on-bad')}" data-a="partAsk" data-id="${esc(p.id)}" data-u="refused"><i class="ti ti-x"></i> Not used</button></div>`);
+  const adminInfo = !isAdmin() ? '' : `<small>${p.source === 'mechanic' ? '<b style="color:var(--amber)">Added by mechanic — not registered in Planet Parts</b>'
+      : (pe ? `Supplier: <b>${esc(pe.fornecedor || '—')}</b> · US$ ${(Number(pe.valor) || 0).toFixed(2)}${pe.invoice ? ' · Inv. ' + esc(pe.invoice) : ''} · ${pe.status === 'devolvida' ? 'Returned to supplier' + (pe.credito === 'creditada' ? ' (credited)' : ' (credit pending)') : 'Not returned yet'}` : 'Part record deleted in Planet Parts')}</small>`;
+  return `<div class="part">
+    <div class="part-top"><div><div class="part-name">${esc(p.nome)}${q > 1 ? ` <span style="color:var(--text2)">× ${q}</span>` : ''}</div>
+      <small>${p.codigo ? esc(p.codigo) : ''}${adminList && c ? `${p.codigo ? ' · ' : ''}<a data-a="openCar" data-id="${esc(p.carId)}" style="color:var(--blue-text);font-weight:700;cursor:pointer">${esc(carTitle(c))}</a> ${esc(c.vehicle || '')}` : ''}</small></div>
+      ${usageChip(p)}</div>
+    ${p.decidedAt && p.usage && p.usage !== 'pending' ? `<small>Marked by ${esc(p.decidedByName || '—')} · ${esc(fmtDT(p.decidedAt))}${isAdmin() ? ' · ' + esc(p.device || '') : ''}${p.note ? ` · “${esc(p.note)}”` : ''}</small>` : ''}
+    ${adminInfo}
+    ${adminList && needsReturn(p) && p.usage === 'refused' && pe ? `<div class="btn-row"><button class="btn slim sec" data-a="markReturned" data-id="${esc(p.pecaId)}"><i class="ti ti-arrow-back-up"></i> Mark as returned to supplier</button></div>` : ''}
+    ${buttons}
+  </div>`;
+}
+
+function registerHTML() {
+  const when = fv('r_when', 'now');
+  return `<div class="card">
+    <h3><i class="ti ti-car"></i> Register a car</h3>
+    <p class="hint" style="margin-bottom:12px">License plate <b>or</b> VIN is required.</p>
+    <div class="two">
+      <div class="field"><label>License plate</label><input class="mono-in" data-m="r_plate" maxlength="10" autocapitalize="characters" autocomplete="off" placeholder="ABC1234" value="${esc(fv('r_plate'))}"></div>
+      <div class="field"><label>VIN</label><input class="mono-in" data-m="r_vin" maxlength="17" autocapitalize="characters" autocomplete="off" placeholder="17 characters" value="${esc(fv('r_vin'))}"></div>
+    </div>
+    <div class="field"><label>Vehicle (year, make, model)</label><input data-m="r_vehicle" placeholder="2019 Honda Civic" value="${esc(fv('r_vehicle'))}"></div>
+    <div class="field"><label>Customer <span style="font-weight:400">(optional)</span></label><input data-m="r_customer" value="${esc(fv('r_customer'))}"></div>
+    <div class="field"><label>When</label><div class="seg">
+      <button class="${when === 'now' ? 'on' : ''}" data-a="setF" data-k="r_when" data-v="now">In the shop now</button>
+      <button class="${when === 'later' ? 'on' : ''}" data-a="setF" data-k="r_when" data-v="later">Scheduled</button></div></div>
+    ${when === 'later' ? `<div class="field"><label>Expected date</label><input type="date" data-m="r_date" min="${todayStr()}" value="${esc(fv('r_date', todayStr(1)))}"></div>` : ''}
+    <div class="field"><label>What is the car here for? <span style="font-weight:400">(optional)</span></label><textarea data-m="r_notes" rows="3" placeholder="Customer complaint, service requested…">${esc(fv('r_notes'))}</textarea></div>
+    <div class="err">${esc(fv('r_err'))}</div>
+    <button class="btn" data-a="registerCar"><i class="ti ti-device-floppy"></i> Save car</button>
+  </div>`;
+}
+
+function carDetailHTML() {
+  const c = S.cars.get(S.carId);
+  if (!c) return `<button class="back" data-a="back"><i class="ti ti-arrow-left"></i> Back</button><div class="empty"><i class="ti ti-car-off"></i>This car is no longer available.</div>`;
+  const admin = isAdmin(), signed = iSigned(c), canWork = admin || signed;
+  const sg = signers(c);
+  const logs = logsOf(c.id), parts = partsOf(c.id);
+  const pending = parts.filter((p) => !p.usage || p.usage === 'pending').length;
+  const row = (k, v) => (v ? `<div><span class="k">${k}</span><span class="v">${v}</span></div>` : '');
+  const info = `<div class="card"><div class="rows">
+      ${row('Vehicle', esc(c.vehicle))}${row('Plate', esc(c.plate))}${row('VIN', esc(c.vin))}${row('Customer', esc(c.customer))}${row('Work order / invoice #', esc(c.ro))}
+      ${row('Scheduled for', c.scheduledFor ? esc(fmtDay(c.scheduledFor)) : '')}${row('Arrived', c.arrivedAt ? esc(fmtDT(c.arrivedAt)) : '')}${row('Finished', c.doneAt ? esc(fmtDT(c.doneAt)) : '')}
+      ${row('Registered', `${esc(c.createdByName || '—')} · ${esc(fmtDT(c.createdAt))}${admin ? '<br><small style="color:var(--text3)">' + esc(c.device || '') + '</small>' : ''}`)}
+    </div>${c.notes ? `<div class="oath" style="margin:10px 0 0">${esc(c.notes)}</div>` : ''}
+    ${admin ? `<div class="btn-row" style="margin-top:12px"><button class="btn slim sec" data-a="editCar" data-id="${esc(c.id)}"><i class="ti ti-edit"></i> Edit</button><button class="btn slim sec" data-a="delCar" data-id="${esc(c.id)}"><i class="ti ti-trash"></i> Delete</button></div>` : ''}</div>`;
+  const resp = `<div class="card"><h3><i class="ti ti-signature"></i> Responsible mechanic</h3>
+      ${sg.length ? sg.map((s) => `<div class="who"><div><b>${esc(s.name || '—')}</b>${s.uid === S.user.uid ? ' (you)' : ''}<small>Signed ${esc(fmtDT(s.ts))}${admin ? ' · ' + esc(s.device || '') : ''}</small></div>
+        ${admin ? `<button class="btn-ghost" data-a="unsign" data-id="${esc(c.id)}" data-uid="${esc(s.uid)}">Remove</button>` : '<i class="ti ti-circle-check" style="color:var(--green);font-size:22px"></i>'}</div>`).join('')
+      : '<p class="hint" style="margin-bottom:10px">Nobody has signed for this car yet.</p>'}
+      ${!admin && !signed && c.status !== 'done' ? `<button class="btn" data-a="askSign" data-id="${esc(c.id)}" style="margin-top:10px"><i class="ti ti-signature"></i> Sign as responsible</button>` : ''}</div>`;
+  if (!canWork) {
+    return `<button class="back" data-a="back"><i class="ti ti-arrow-left"></i> Back</button>
+      <div class="detail-head"><span class="plate big">${esc(carTitle(c))}</span>${statusChip(c)}</div>${info}${resp}
+      <div class="card"><p class="hint"><i class="ti ti-lock"></i> Sign as responsible to see the parts for this car and to record your work.</p></div>`;
+  }
+  const entry = c.status === 'done' && !admin ? '' : `<div class="card"><h3><i class="ti ti-pencil"></i> ${admin ? 'Add administrator note' : 'What did you do on this car?'}</h3>
+      <textarea data-m="log_${esc(c.id)}" placeholder="${admin ? 'Note for the record…' : 'E.g.: Replaced front brake pads and rotors. Left rear caliper is seized, waiting for part.'}">${esc(fv('log_' + c.id))}</textarea>
+      <button class="btn" data-a="saveLog" data-id="${esc(c.id)}" style="margin-top:10px"><i class="ti ti-device-floppy"></i> Save entry</button>
+      <p class="hint" style="margin-top:8px">Saved with date, time and this device. Entries cannot be edited afterwards.</p></div>`;
+  const partsCard = `<div class="card"><h3><i class="ti ti-package"></i> Parts for this car ${pending ? `<span class="chip amber">${pending} not marked</span>` : ''}</h3>
+      ${parts.length ? parts.map((p) => partHTML(p, false, admin || c.status !== 'done')).join('') : '<p class="hint">No parts have been issued to this car yet.</p>'}
+      ${c.status !== 'done' || admin ? `<button class="btn slim sec" data-a="extraAsk" data-id="${esc(c.id)}" style="margin-top:12px"><i class="ti ti-plus"></i> Add a part I used that is not listed</button>` : ''}</div>`;
+  const statusBtns = c.status === 'done'
+    ? `<button class="btn sec" data-a="status" data-id="${esc(c.id)}" data-s="in_shop"><i class="ti ti-rotate"></i> Reopen car</button>`
+    : (c.status === 'scheduled'
+      ? `<button class="btn" data-a="status" data-id="${esc(c.id)}" data-s="in_shop"><i class="ti ti-car"></i> Car arrived</button>`
+      : `<button class="btn good" data-a="status" data-id="${esc(c.id)}" data-s="done"><i class="ti ti-flag-check"></i> Car is done</button>`);
+  return `<button class="back" data-a="back"><i class="ti ti-arrow-left"></i> Back</button>
+    <div class="detail-head"><span class="plate big">${esc(carTitle(c))}</span>${statusChip(c)}</div>
+    ${info}${resp}${entry}${partsCard}
+    <div class="card"><h3><i class="ti ti-history"></i> ${admin ? 'Full history — all mechanics' : 'My work on this car'} <span class="chip grey">${logs.length}</span></h3>
+      ${logs.length ? logs.map((l) => logHTML(l, false)).join('') : '<p class="hint">Nothing recorded yet.</p>'}</div>
+    ${statusBtns}`;
+}
+
+const MODALS = {
+  sign(m) {
+    const c = S.cars.get(m.carId) || {};
+    return `<h2><i class="ti ti-signature"></i> Sign as responsible</h2>
+      <div class="oath">I, <b>${esc(myName())}</b>, take responsibility for the work on <b>${esc(carTitle(c))}</b>${c.vehicle ? ' (' + esc(c.vehicle) + ')' : ''} and for every part issued to this car. I will record what I do and mark every part as used or not used.</div>
+      <div class="field"><label>Confirm with your password</label><input type="password" data-m="signPw" data-enter="sign" autocomplete="current-password"></div>
+      <div class="err">${esc(fv('signErr'))}</div>
+      <div class="btn-row"><button class="btn sec" data-a="closeModal">Cancel</button><button class="btn" data-a="sign"><i class="ti ti-signature"></i> Sign</button></div>`;
+  },
+  part(m) {
+    const p = S.parts.find((x) => x.id === m.partId) || {}, q = Number(p.qtd) || 1;
+    return `<h2>${m.usage === 'partial' ? 'Used some' : 'Not used'} — ${esc(p.nome)}</h2>
+      ${m.usage === 'partial'
+        ? `<div class="field"><label>How many of the ${q} did you use?</label><input type="number" inputmode="numeric" min="1" max="${q - 1}" data-m="partQty" value="${esc(fv('partQty', '1'))}"></div>`
+        : `<p class="hint" style="margin-bottom:12px">This part will be listed for the administrator to return to the supplier. Leave it in the returns area.</p>`}
+      <div class="field"><label>Reason <span style="font-weight:400">(optional)</span></label><input data-m="partNote" data-enter="partSave" placeholder="Wrong part, not needed, damaged…" value="${esc(fv('partNote'))}"></div>
+      <div class="err">${esc(fv('partErr'))}</div>
+      <div class="btn-row"><button class="btn sec" data-a="closeModal">Cancel</button><button class="btn ${m.usage === 'refused' ? 'bad' : ''}" data-a="partSave">Confirm</button></div>`;
+  },
+  extra() {
+    return `<h2>Add a part I used</h2>
+      <p class="hint" style="margin-bottom:12px">For something you used on this car that is not in the list above (shop stock, fluids, a part you picked up).</p>
+      <div class="field"><label>Part / material</label><input data-m="x_nome" placeholder="E.g.: Brake cleaner" value="${esc(fv('x_nome'))}"></div>
+      <div class="two"><div class="field"><label>Quantity</label><input type="number" inputmode="numeric" min="1" data-m="x_qty" value="${esc(fv('x_qty', '1'))}"></div>
+        <div class="field"><label>Note <span style="font-weight:400">(optional)</span></label><input data-m="x_note" value="${esc(fv('x_note'))}"></div></div>
+      <div class="err">${esc(fv('x_err'))}</div>
+      <div class="btn-row"><button class="btn sec" data-a="closeModal">Cancel</button><button class="btn" data-a="extraSave">Add</button></div>`;
+  },
+  editCar() {
+    return `<h2>Edit car</h2>
+      <div class="two"><div class="field"><label>License plate</label><input class="mono-in" data-m="e_plate" maxlength="10" value="${esc(fv('e_plate'))}"></div>
+        <div class="field"><label>VIN</label><input class="mono-in" data-m="e_vin" maxlength="17" value="${esc(fv('e_vin'))}"></div></div>
+      <div class="field"><label>Vehicle</label><input data-m="e_vehicle" value="${esc(fv('e_vehicle'))}"></div>
+      <div class="two"><div class="field"><label>Customer</label><input data-m="e_customer" value="${esc(fv('e_customer'))}"></div>
+        <div class="field"><label>Work order / invoice #</label><input data-m="e_ro" value="${esc(fv('e_ro'))}"></div></div>
+      <div class="field"><label>Scheduled for</label><input type="date" data-m="e_date" value="${esc(fv('e_date'))}"></div>
+      <div class="field"><label>Notes</label><textarea data-m="e_notes" rows="3">${esc(fv('e_notes'))}</textarea></div>
+      <div class="err">${esc(fv('e_err'))}</div>
+      <div class="btn-row"><button class="btn sec" data-a="closeModal">Cancel</button><button class="btn" data-a="saveCar">Save</button></div>`;
+  },
+  addMech() {
+    return `<h2><i class="ti ti-user-plus"></i> Add mechanic</h2>
+      <div class="field"><label>Name</label><input data-m="t_name" value="${esc(fv('t_name'))}"></div>
+      <div class="field"><label>Email (used to sign in)</label><input type="email" data-m="t_email" autocapitalize="none" value="${esc(fv('t_email'))}"></div>
+      <div class="field"><label>Password (at least 6 characters)</label><input data-m="t_pw" autocomplete="off" value="${esc(fv('t_pw'))}"></div>
+      <div class="err">${esc(fv('t_err'))}</div>
+      <div class="btn-row"><button class="btn sec" data-a="closeModal">Cancel</button><button class="btn" data-a="addMech">Create account</button></div>`;
+  }
+};
+
+// ── data writes ──
+const stamp = () => ({ uid: S.user.uid, email: S.user.email.toLowerCase(), name: myName(), at: new Date().toISOString(), ts: serverTimestamp(), device: deviceLabel() });
+const logDoc = (carId, kind, text) => ({ carId, kind, text, ...stamp() });
+const newLogRef = () => doc(collection(db, 'carLogs'));
+// Firestore resolves a write only when the server confirms it. With no signal the write
+// stays queued in memory, so stop waiting and say so instead of freezing the screen.
+function commit(p) {
+  let late = false;
+  const done = p.then(() => true);
+  done.catch((e) => { if (late) { console.error(e); toast('A change could not be saved: ' + (e.code || e.message)); } });
+  return Promise.race([done, new Promise((res) => setTimeout(() => {
+    late = true; toast('No connection — kept on this phone and sent when the signal is back. Keep the app open.'); res(false);
+  }, 10000))]);
+}
+const cleanId = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+const A = {
+  async login() {
+    S.f.loginErr = '';
+    try { await signInWithEmailAndPassword(auth, fv('email').trim(), fv('pw')); S.f.pw = ''; }
+    catch (e) {
+      const map = { 'auth/invalid-email': 'Invalid email', 'auth/invalid-credential': 'Wrong email or password', 'auth/wrong-password': 'Wrong email or password', 'auth/user-not-found': 'Wrong email or password', 'auth/missing-password': 'Enter your password', 'auth/too-many-requests': 'Too many attempts. Try again in a few minutes.', 'auth/network-request-failed': 'No connection' };
+      S.f.loginErr = map[e.code] || ('Error: ' + e.code); render(true);
+    }
+  },
+  logout() { signOut(auth); },
+  retry() { S.phase = 'loading'; render(true); start(S.user); },
+  tab({ t }) {
+    if (t === 'register') S.view = 'register'; else { S.view = null; S.tab = t; }
+    S.carId = null; watchCar(); render(true); window.scrollTo(0, 0);
+  },
+  setF({ k, v }) { S.f[k] = v; render(true); },
+  openCar({ id }) { S.carId = id; history.pushState({ car: id }, ''); watchCar(); render(true); window.scrollTo(0, 0); },
+  back() { if (history.state && history.state.car) history.back(); else { S.carId = null; watchCar(); render(true); } },
+  overlay(_, el, ev) { if (ev.target === el) closeModal(); },
+  closeModal() { closeModal(); },
+
+  async registerCar() {
+    const plate = cleanId(fv('r_plate')), vin = cleanId(fv('r_vin')), later = fv('r_when', 'now') === 'later';
+    const fail = (m) => { S.f.r_err = m; render(true); };
+    if (!plate && !vin) return fail('Enter the license plate or the VIN.');
+    if (vin && vin.length !== 17 && !confirm(`A VIN has 17 characters and this one has ${vin.length}. Save it anyway?`)) return;
+    const date = later ? fv('r_date', todayStr(1)) : '';
+    if (later && !date) return fail('Choose the expected date.');
+    const dup = [...S.cars.values()].find((c) => c.status !== 'done' && ((plate && c.plate === plate) || (vin && c.vin === vin)));
+    if (dup) { toast('This car is already registered — opening it.'); ['r_plate', 'r_vin', 'r_err'].forEach((k) => delete S.f[k]); S.view = null; return A.openCar({ id: dup.id }); }
+    const now = new Date().toISOString(), ref = doc(collection(db, 'cars'));
+    const ok = await commit(setDoc(ref, {
+      plate, vin, vehicle: fv('r_vehicle').trim(), customer: fv('r_customer').trim(), ro: '', notes: fv('r_notes').trim(),
+      status: later ? 'scheduled' : 'in_shop', scheduledFor: date, arrivedAt: later ? null : now, doneAt: null,
+      createdAt: now, createdBy: S.user.uid, createdByName: myName(), device: deviceLabel(),
+      mechanicIds: [], signatures: {}, updatedAt: serverTimestamp()
+    }));
+    Object.keys(S.f).filter((k) => k.startsWith('r_')).forEach((k) => delete S.f[k]);
+    S.view = null; if (ok) toast(later ? 'Car scheduled' : 'Car registered');
+    A.openCar({ id: ref.id });
+    if (!later && !isAdmin()) A.askSign({ id: ref.id });
+  },
+
+  askSign({ id }) { S.f.signPw = ''; S.f.signErr = ''; openModal({ type: 'sign', carId: id }); },
+  async sign() {
+    const id = S.modal.carId, c = S.cars.get(id);
+    try { await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credential(S.user.email, fv('signPw'))); }
+    catch (e) { S.f.signErr = e.code === 'auth/network-request-failed' ? 'No connection.' : 'Wrong password.'; return renderModal(); }
+    const st = stamp();
+    const upd = { mechanicIds: arrayUnion(S.user.uid), [`signatures.${S.user.uid}`]: { name: st.name, email: st.email, ts: serverTimestamp(), device: st.device }, updatedAt: serverTimestamp() };
+    if (c && c.status === 'scheduled') { upd.status = 'in_shop'; upd.arrivedAt = st.at; }
+    const ok = await commit(updateDoc(doc(db, 'cars', id), upd));
+    commit(setDoc(newLogRef(), logDoc(id, 'sign', 'Signed as responsible mechanic' + (upd.status ? ' · car arrived' : ''))));
+    S.f.signPw = ''; closeModal(); if (ok) toast('Signed — you are responsible for this car'); watchCar(); render(true);
+  },
+  async saveLog({ id }) {
+    const text = fv('log_' + id).trim();
+    if (!text) return toast('Write what you did first');
+    // Clear the box right away so a slow connection cannot lead to saving the same entry twice.
+    delete S.f['log_' + id]; render(true);
+    try { if (await commit(setDoc(newLogRef(), logDoc(id, isAdmin() ? 'note' : 'work', text.slice(0, 5000))))) toast('Entry saved'); }
+    catch (e) { S.f['log_' + id] = text; render(true); throw e; }
+  },
+
+  async partUsed({ id }) { await savePart(id, 'used', null, ''); },
+  partAsk({ id, u }) { S.f.partNote = ''; S.f.partErr = ''; S.f.partQty = '1'; openModal({ type: 'part', partId: id, usage: u }); },
+  async partSave() {
+    const { partId, usage } = S.modal, p = S.parts.find((x) => x.id === partId), q = Number(p.qtd) || 1;
+    let n = 0;
+    if (usage === 'partial') {
+      n = parseInt(fv('partQty'), 10);
+      if (!(n >= 1 && n < q)) { S.f.partErr = `Enter a number from 1 to ${q - 1}.`; return renderModal(); }
+    }
+    await savePart(partId, usage, n, fv('partNote').trim());
+    closeModal();
+  },
+  extraAsk({ id }) { ['x_nome', 'x_note', 'x_err'].forEach((k) => delete S.f[k]); S.f.x_qty = '1'; openModal({ type: 'extra', carId: id }); },
+  async extraSave() {
+    const nome = fv('x_nome').trim(), qtd = Math.max(1, parseInt(fv('x_qty'), 10) || 1), st = stamp();
+    if (!nome) { S.f.x_err = 'Enter the part name.'; return renderModal(); }
+    const b = writeBatch(db);
+    b.set(doc(collection(db, 'carParts')), { carId: S.modal.carId, pecaId: null, nome, codigo: '', qtd, source: 'mechanic', usage: 'used', usedQty: qtd, addedBy: st.uid, addedByName: st.name, decidedBy: st.uid, decidedByName: st.name, decidedAt: serverTimestamp(), device: st.device, note: fv('x_note').trim(), createdAt: st.at });
+    b.set(newLogRef(), logDoc(S.modal.carId, 'part', `Added unlisted part: ${nome} × ${qtd} — USED${fv('x_note').trim() ? ' (' + fv('x_note').trim() + ')' : ''}`));
+    const ok = await commit(b.commit()); closeModal(); if (ok) toast('Part added');
+  },
+
+  async status({ id, s }) {
+    const c = S.cars.get(id); if (!c) return;
+    if (s === 'done') {
+      const pend = partsOf(id).filter((p) => !p.usage || p.usage === 'pending').length;
+      if (pend) return toast(`Mark the ${pend} part${pend > 1 ? 's' : ''} as used or not used first`);
+      if (!confirm(`Mark ${carTitle(c)} as done?`)) return;
+    }
+    const now = new Date().toISOString();
+    const upd = { status: s, updatedAt: serverTimestamp() };
+    let text;
+    if (s === 'done') { upd.doneAt = now; text = 'Car marked as done'; }
+    else if (c.status === 'done') { upd.doneAt = null; text = 'Car reopened'; }
+    else { upd.arrivedAt = now; text = 'Car arrived at the shop'; }
+    const ok = await commit(updateDoc(doc(db, 'cars', id), upd));
+    commit(setDoc(newLogRef(), logDoc(id, 'status', text)));
+    if (ok) toast(text);
+  },
+
+  // administrator
+  editCar({ id }) {
+    const c = S.cars.get(id);
+    Object.assign(S.f, { e_plate: c.plate, e_vin: c.vin, e_vehicle: c.vehicle, e_customer: c.customer, e_ro: c.ro || '', e_date: c.scheduledFor || '', e_notes: c.notes || '', e_err: '' });
+    openModal({ type: 'editCar', carId: id });
+  },
+  async saveCar() {
+    const plate = cleanId(fv('e_plate')), vin = cleanId(fv('e_vin'));
+    if (!plate && !vin) { S.f.e_err = 'Enter the license plate or the VIN.'; return renderModal(); }
+    await updateDoc(doc(db, 'cars', S.modal.carId), { plate, vin, vehicle: fv('e_vehicle').trim(), customer: fv('e_customer').trim(), ro: fv('e_ro').trim(), scheduledFor: fv('e_date'), notes: fv('e_notes').trim(), updatedAt: serverTimestamp() });
+    closeModal(); toast('Car updated');
+  },
+  async delCar({ id }) {
+    const c = S.cars.get(id);
+    if (logsOf(id).length || partsOf(id).length) return toast('This car has history or parts and cannot be deleted. Mark it as done instead.');
+    if (!confirm(`Delete ${carTitle(c)}? This cannot be undone.`)) return;
+    await deleteDoc(doc(db, 'cars', id)); toast('Car deleted'); A.back();
+  },
+  async unsign({ id, uid }) {
+    const c = S.cars.get(id), s = (c.signatures || {})[uid] || {};
+    if (!confirm(`Remove ${s.name || 'this mechanic'} as responsible for ${carTitle(c)}? Their entries stay in the history.`)) return;
+    await updateDoc(doc(db, 'cars', id), { mechanicIds: arrayRemove(uid), [`signatures.${uid}`]: deleteField(), updatedAt: serverTimestamp() });
+    await setDoc(newLogRef(), logDoc(id, 'sign', `Administrator removed ${s.name || uid} as responsible`));
+  },
+  async markReturned({ id }) {
+    const pe = S.pecas.get(id); if (!pe) return;
+    if (!confirm(`Mark "${pe.nome}" as returned to ${pe.fornecedor || 'the supplier'}? It will show as Returned (credit pending) in Planet Parts.`)) return;
+    await updateDoc(doc(db, 'pecas', id), { status: 'devolvida', credito: pe.credito || 'pendente' });
+    toast('Marked as returned');
+  },
+  addMechAsk() { ['t_name', 't_email', 't_pw', 't_err'].forEach((k) => delete S.f[k]); openModal({ type: 'addMech' }); },
+  async addMech() {
+    const name = fv('t_name').trim(), email = fv('t_email').trim().toLowerCase(), pw = fv('t_pw');
+    const fail = (m) => { S.f.t_err = m; renderModal(); };
+    if (!name) return fail('Enter the name.');
+    if (!/^[^@\s/]+@[^@\s/]+\.[^@\s/]+$/.test(email)) return fail('Enter a valid email.');
+    if (pw.length < 6) return fail('Password needs at least 6 characters.');
+    let note = '';
+    try {
+      // A second app instance creates the account without signing the administrator out.
+      const app2 = getApps().find((a) => a.name === 'provision') || initializeApp(firebaseConfig, 'provision');
+      const auth2 = getAuth(app2);
+      await createUserWithEmailAndPassword(auth2, email, pw);
+      await signOut(auth2);
+    } catch (e) {
+      if (e.code === 'auth/email-already-in-use') note = ' (the account already existed — its password was not changed)';
+      else if (e.code === 'auth/operation-not-allowed' || e.code === 'auth/admin-restricted-operation') note = ' — but the login must be created in the Firebase console (Authentication > Add user)';
+      else return fail('Could not create the account: ' + e.code);
+    }
+    await setDoc(doc(db, 'team', email), { name, email, role: 'mechanic', active: true, createdAt: new Date().toISOString() });
+    closeModal(); toast(`${name} added to the team${note}`);
+  },
+  async toggleMech({ email }) {
+    const m = S.team.find((x) => x.email === email);
+    if (m.active && !confirm(`Deactivate ${m.name}? They will lose access immediately.`)) return;
+    await updateDoc(doc(db, 'team', email), { active: !m.active });
+  },
+  async resetPw({ email }) {
+    if (!confirm(`Send a password reset email to ${email}?`)) return;
+    await sendPasswordResetEmail(auth, email); toast('Reset email sent');
+  }
+};
+async function savePart(partId, usage, n, note) {
+  const p = S.parts.find((x) => x.id === partId); if (!p) return;
+  const q = Number(p.qtd) || 1, st = stamp();
+  const usedQty = usage === 'used' ? q : (usage === 'partial' ? n : 0);
+  const what = usage === 'used' ? 'USED' : (usage === 'partial' ? `used ${usedQty} of ${q}, ${q - usedQty} to return` : 'NOT USED — return to supplier');
+  const b = writeBatch(db);
+  b.update(doc(db, 'carParts', partId), { usage, usedQty, decidedBy: st.uid, decidedByName: st.name, decidedAt: serverTimestamp(), device: st.device, note });
+  b.set(newLogRef(), logDoc(p.carId, 'part', `Part ${p.nome}${q > 1 ? ' × ' + q : ''}: ${what}${note ? ' (' + note + ')' : ''}`));
+  if (await commit(b.commit())) toast(usage === 'used' ? 'Marked as used' : 'Saved');
+}
+
+// ── events ──
+// Moving around the app must keep working while a save is still waiting for the server.
+const NAV = new Set(['tab', 'setF', 'openCar', 'back', 'overlay', 'closeModal', 'askSign', 'partAsk', 'extraAsk', 'editCar', 'addMechAsk', 'retry', 'logout']);
+let busy = false;
+document.addEventListener('click', async (ev) => {
+  const el = ev.target.closest('[data-a]');
+  if (!el) return;
+  const fn = A[el.dataset.a]; if (!fn) return;
+  if (NAV.has(el.dataset.a)) return fn(el.dataset, el, ev);
+  if (busy) return;
+  busy = true; document.body.classList.add('busy');
+  try { await fn(el.dataset, el, ev); }
+  catch (e) {
+    console.error(e);
+    toast(e.code === 'permission-denied' ? 'Not allowed. If this keeps happening, ask the administrator.' : (e.code === 'unavailable' ? 'No connection — try again.' : 'Something went wrong: ' + (e.code || e.message)));
+  }
+  finally { busy = false; document.body.classList.remove('busy'); }
+});
+document.addEventListener('input', (ev) => {
+  const t = ev.target; if (!t.dataset || !t.dataset.m) return;
+  S.f[t.dataset.m] = t.value;
+  if ('live' in t.dataset) renderRegions();
+});
+document.addEventListener('change', (ev) => { if (ev.target.tagName === 'SELECT' && ev.target.dataset.m) { S.f[ev.target.dataset.m] = ev.target.value; renderRegions(); } });
+document.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.dataset && ev.target.dataset.enter && !busy) { ev.preventDefault(); const sel = `[data-a="${ev.target.dataset.enter}"]`; (modalEl.querySelector(sel) || appEl.querySelector(sel))?.click(); } });
+document.addEventListener('focusout', () => setTimeout(() => { if (S.dirty) render(); }, 200));
+window.addEventListener('popstate', () => { if (S.modal) closeModal(); S.carId = null; if (S.phase === 'app') { watchCar(); render(true); } });
+
+// ── listeners ──
+const rows = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: 'estimate' }) }));
+function stopAll() { baseSubs.forEach((u) => u()); carSubs.forEach((u) => u()); baseSubs = []; carSubs = []; S.carWatchKey = null; }
+function onListenErr(e) {
+  console.error('listener', e);
+  if (e.code === 'permission-denied' && S.user) start(S.user);
+}
+function mergeCars() {
+  S.cars = isAdmin() ? S.openCars : new Map([...S.myCars, ...S.openCars]);
+  if (S.modal && S.modal.carId && !S.cars.has(S.modal.carId)) closeModal();
+  watchCar(); render();
+}
+const carRows = (snap) => new Map(snap.docs.map((d) => [d.id, { id: d.id, _pending: d.metadata.hasPendingWrites, ...d.data({ serverTimestamps: 'estimate' }) }]));
+function listen() {
+  stopAll();
+  const meta = { includeMetadataChanges: true };
+  if (isAdmin()) {
+    baseSubs.push(onSnapshot(collection(db, 'cars'), meta, (s) => { S.openCars = carRows(s); mergeCars(); }, onListenErr));
+    baseSubs.push(onSnapshot(collection(db, 'carLogs'), (s) => { S.logs = rows(s); render(); }, onListenErr));
+    baseSubs.push(onSnapshot(collection(db, 'carParts'), (s) => { S.parts = rows(s); render(); }, onListenErr));
+    baseSubs.push(onSnapshot(collection(db, 'pecas'), (s) => { S.pecas = new Map(s.docs.map((d) => [d.id, d.data()])); render(); }, onListenErr));
+    baseSubs.push(onSnapshot(collection(db, 'team'), (s) => { S.team = s.docs.map((d) => d.data()); render(); }, onListenErr));
+  } else {
+    baseSubs.push(onSnapshot(query(collection(db, 'cars'), where('status', 'in', ['scheduled', 'in_shop'])), meta, (s) => { S.openCars = carRows(s); mergeCars(); }, onListenErr));
+    baseSubs.push(onSnapshot(query(collection(db, 'cars'), where('mechanicIds', 'array-contains', S.user.uid)), meta, (s) => { S.myCars = carRows(s); mergeCars(); }, onListenErr));
+    baseSubs.push(onSnapshot(doc(db, 'team', S.user.email.toLowerCase()), (d) => { if (!d.exists() || !d.data().active) start(S.user); }, onListenErr));
+  }
+}
+// Mechanics only load the log and parts of the car they have open and signed for.
+function watchCar() {
+  if (isAdmin()) return;
+  const c = S.carId && S.cars.get(S.carId);
+  const key = c && iSigned(c) && !c._pending ? c.id : null;
+  if (key === S.carWatchKey) return;
+  carSubs.forEach((u) => u()); carSubs = []; S.carWatchKey = key; S.logs = []; S.parts = [];
+  if (!key) return;
+  const retry = (e) => {
+    console.error('car listener', e);
+    S.carWatchKey = null;
+    if (e.code === 'permission-denied' && S.watchRetries++ < 3) setTimeout(watchCar, 1500);
+  };
+  carSubs.push(onSnapshot(query(collection(db, 'carLogs'), where('carId', '==', key), where('uid', '==', S.user.uid)), (s) => { S.watchRetries = 0; S.logs = rows(s); render(); }, retry));
+  carSubs.push(onSnapshot(query(collection(db, 'carParts'), where('carId', '==', key)), (s) => { S.parts = rows(s); render(); }, retry));
+}
+
+async function start(user) {
+  stopAll();
+  S.user = user; S.role = null; S.me = null;
+  if (!user) { S.phase = 'login'; S.carId = null; S.modal = null; renderModal(); return render(true); }
+  const email = (user.email || '').toLowerCase();
+  const denied = (e) => e && e.code === 'permission-denied';
+  try {
+    try { await getDoc(doc(db, 'meta', 'access')); S.role = 'admin'; S.me = { name: 'Admin', email }; }
+    catch (e) { if (!denied(e)) throw e; }
+    if (!S.role) {
+      try {
+        const t = await getDoc(doc(db, 'team', email));
+        if (t.exists() && t.data().active) { S.role = 'mechanic'; S.me = t.data(); }
+      } catch (e) { if (!denied(e)) throw e; }
+    }
+  } catch (e) { console.error(e); S.phase = 'offline'; return render(true); }
+  if (!S.role) { S.phase = 'denied'; S.carId = null; closeModal(); return render(true); }
+  if (S.phase !== 'app') { S.tab = isAdmin() ? 'cars' : 'mine'; S.view = null; S.carId = null; }
+  S.phase = 'app';
+  S.openCars = new Map(); S.myCars = new Map(); S.cars = new Map(); S.logs = []; S.parts = [];
+  listen(); render(true);
+}
+onAuthStateChanged(auth, (user) => { S.phase = user ? 'loading' : 'login'; start(user); });
+
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
